@@ -46,15 +46,35 @@ const getStatusColor = (status) => {
 const getModelColor = (model) => {
   switch (model) {
     case AI_MODELS.GPT4:
-      return { color: "primary", textColor: "#1976d2" };
+      return { 
+        backgroundColor: "#dbeafe", 
+        textColor: "#1d4ed8",
+        borderColor: "#3b82f6"
+      };
     case AI_MODELS.GPT35:
-      return { color: "info", textColor: "#0288d1" };
+      return { 
+        backgroundColor: "#e0f2fe", 
+        textColor: "#0277bd",
+        borderColor: "#29b6f6"
+      };
     case AI_MODELS.CLAUDE:
-      return { color: "secondary", textColor: "#9c27b0" };
+      return { 
+        backgroundColor: "#f3e8ff", 
+        textColor: "#7c3aed",
+        borderColor: "#a855f7"
+      };
     case AI_MODELS.LLAMA:
-      return { color: "success", textColor: "#2e7d32" };
+      return { 
+        backgroundColor: "#dcfce7", 
+        textColor: "#166534",
+        borderColor: "#22c55e"
+      };
     default:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#6b7280",
+        borderColor: "#d1d5db"
+      };
   }
 };
 
@@ -183,9 +203,15 @@ export default function ServiceTableRow(props) {
             label={output?.ai_model || "Unknown"}
             size="small"
             sx={{
-              backgroundColor: `${modelStyle.textColor}15`,
+              backgroundColor: modelStyle.backgroundColor,
               color: modelStyle.textColor,
-              fontWeight: 500
+              border: `1px solid ${modelStyle.borderColor}`,
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: '28px',
+              '& .MuiChip-label': {
+                px: 1.5,
+              }
             }}
           />
         </TableCell>
