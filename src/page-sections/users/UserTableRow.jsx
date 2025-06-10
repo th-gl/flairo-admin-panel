@@ -31,28 +31,76 @@ const getAccessLevelColor = (level) => {
 
   switch (level) {
     case ACCESS_LEVELS.FREE:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#374151",
+        borderColor: "#d1d5db"
+      };
     case ACCESS_LEVELS.PREMIUM:
-      return { color: "primary", textColor: "#1976d2" };
+      return { 
+        backgroundColor: "#dbeafe", 
+        textColor: "#1d4ed8",
+        borderColor: "#3b82f6"
+      };
     case ACCESS_LEVELS.UNLIMITED:
-      return { color: "secondary", textColor: "#d32f2f" };
+      return { 
+        backgroundColor: "#fef3c7", 
+        textColor: "#d97706",
+        borderColor: "#f59e0b"
+      };
+    case 'Enterprise': // Handle undefined ACCESS_LEVELS.ENTERPRISE
+      return { 
+        backgroundColor: "#e0e7ff", 
+        textColor: "#6366f1",
+        borderColor: "#8b5cf6"
+      };
+    case 'VIP': // Handle undefined ACCESS_LEVELS.VIP
+      return { 
+        backgroundColor: "#fce7f3", 
+        textColor: "#be185d",
+        borderColor: "#ec4899"
+      };
     default:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#6b7280",
+        borderColor: "#d1d5db"
+      };
   }
 };
 
 const getPlanStatusColor = (status) => {
   switch (status) {
     case PLAN_STATUS.ACTIVE:
-      return { color: "success", textColor: "#2e7d32" };
+      return { 
+        backgroundColor: "#dcfce7", 
+        textColor: "#166534",
+        borderColor: "#22c55e"
+      };
     case PLAN_STATUS.TRIAL:
-      return { color: "warning", textColor: "#ed6c02" };
+      return { 
+        backgroundColor: "#fef3c7", 
+        textColor: "#92400e",
+        borderColor: "#f59e0b"
+      };
     case PLAN_STATUS.EXPIRED:
-      return { color: "error", textColor: "#d32f2f" };
+      return { 
+        backgroundColor: "#fee2e2", 
+        textColor: "#dc2626",
+        borderColor: "#ef4444"
+      };
     case PLAN_STATUS.INACTIVE:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#4b5563",
+        borderColor: "#9ca3af"
+      };
     default:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#6b7280",
+        borderColor: "#d1d5db"
+      };
   }
 };
 
@@ -182,9 +230,15 @@ export default function UserTableRow(props) {
             label={user.accessLevel}
             size="small"
             sx={{
-              backgroundColor: `${accessLevelStyle.textColor}15`,
+              backgroundColor: accessLevelStyle.backgroundColor,
               color: accessLevelStyle.textColor,
-              fontWeight: 500
+              border: `1px solid ${accessLevelStyle.borderColor}`,
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: '28px',
+              '& .MuiChip-label': {
+                px: 1.5,
+              }
             }}
           />
         </TableCell>
@@ -194,9 +248,15 @@ export default function UserTableRow(props) {
             label={user.planStatus}
             size="small"
             sx={{
-              backgroundColor: `${planStatusStyle.textColor}15`,
+              backgroundColor: planStatusStyle.backgroundColor,
               color: planStatusStyle.textColor,
-              fontWeight: 500
+              border: `1px solid ${planStatusStyle.borderColor}`,
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: '28px',
+              '& .MuiChip-label': {
+                px: 1.5,
+              }
             }}
           />
         </TableCell>

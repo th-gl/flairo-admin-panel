@@ -14,7 +14,7 @@ export default function GuestGuard({
 
   if (isAuthenticated) {
     if (state?.from) return <Navigate to={state.from} />;
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/" />;
   }
 
   return <Fragment>{children || <Outlet />}</Fragment>;
