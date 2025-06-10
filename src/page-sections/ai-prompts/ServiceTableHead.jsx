@@ -9,6 +9,7 @@ import { isDark } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { sortServices, unsortServices } from "./request";
+import { alpha } from "@mui/material/styles";
 
 export default function ServiceTableHead(props) {
   useEffect(() => {
@@ -44,34 +45,20 @@ export default function ServiceTableHead(props) {
       label: t("Category"),
       sortable: true,
     },
-    {
-      id: "status",
-      numeric: false,
-      disablePadding: false,
-      label: t("Status"),
-      sortable: true,
-    },
     // {
-    //   id: "version",
+    //   id: "status",
     //   numeric: false,
     //   disablePadding: false,
-    //   label: t("Version"),
+    //   label: t("Status"),
     //   sortable: true,
     // },
-    // {
-    //   id: "usage_count",
-    //   numeric: true,
-    //   disablePadding: false,
-    //   label: t("Usage"),
-    //   sortable: true,
-    // },
-    // {
-    //   id: "user_rating",
-    //   numeric: true,
-    //   disablePadding: false,
-    //   label: t("Rating"),
-    //   sortable: true,
-    // },
+    {
+      id: "usage_count",
+      numeric: true,
+      disablePadding: false,
+      label: t("Usage"),
+      sortable: true,
+    },
     {
       id: "updated_at",
       numeric: false,
@@ -126,6 +113,17 @@ export default function ServiceTableHead(props) {
             onChange={onSelectAllRows}
             checked={rowCount > 0 && numSelected === rowCount}
             indeterminate={numSelected > 0 && numSelected < rowCount}
+            sx={{
+              '&.Mui-checked': {
+                color: 'primary.main',
+              },
+              '&.MuiCheckbox-indeterminate': {
+                color: 'primary.main',
+              },
+              '&:hover': {
+                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              },
+            }}
           />
         </TableCell>
 

@@ -22,29 +22,6 @@ export default function MultiLevelMenu({ sidebarCompact }) {
   const { t } = useTranslation();
 
   const navigations = [
-    // {
-    //   type: "label",
-    //   label: "Dashboard",
-    // },
-    // {
-    //   name: "Analytics",
-    //   icon: duotone.PersonChalkboard,
-    //   children: [
-    //     {
-    //       name: "Analytics 1",
-    //       path: "/dashboard",
-    //     },
-    //   ],
-    // },
-    // {
-    //   type: "label",
-    //   label: "Pages",
-    // },
-    // {
-    //   name: "User Profile",
-    //   icon: duotone.UserProfile,
-    //   path: "/dashboard/user-profile",
-    // },
     {
       name: t("users"),
       icon: duotone.UserList,
@@ -52,34 +29,24 @@ export default function MultiLevelMenu({ sidebarCompact }) {
     },
     {
       name: t("User Activity"),
-      icon: duotone.TodoList,
+      icon: duotone.PersonCircleCheck,
       path: "/user-activity-list",
     },
-    // {
-    //   name: t("services"),
-    //   icon: duotone.TodoList,
-    //   path: "/services-list",
-    // },
     {
       name: t("Recent AI Output"),
-      icon: duotone.TodoList,
+      icon: duotone.CommentsQuestionCheck,
       path: "/recent-ai-output-list",
     },
     {
       name: t("AI Prompts"),
-      icon: duotone.TodoList,
+      icon: duotone.Edit,
       path: "/ai-prompts-list",
     },
     {
       name: t("Subscription Plans"),
-      icon: duotone.TodoList,
+      icon: duotone.Pricing,
       path: "/subscription-plans-list",
-    },
-    // {
-    //   name: t("bookings"),
-    //   icon: duotone.Calender,
-    //   path: "/bookings-list",
-    // },
+    }
   ];
 
   const { user } = useAuth();

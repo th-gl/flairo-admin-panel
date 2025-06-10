@@ -289,14 +289,14 @@ export default function ServiceTableRow(props) {
               handleClick={handleFlagForReview}
             /> */}
 
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit")}
               handleClick={() => {
                 handleCloseOpenMenu();
                 navigate(`/ai-output-edit/${output.id}`);
               }}
-            />
+            /> */}
 
             <TableMoreMenuItem
               Icon={DeleteOutline}
@@ -375,7 +375,7 @@ export default function ServiceTableRow(props) {
             <Divider />
 
             {/* Performance Metrics */}
-            <Box>
+            {/* <Box>
               <Paragraph variant="h6" gutterBottom>{t("Performance Metrics")}</Paragraph>
               <FlexBox flexDirection="column" gap={1}>
                 <FlexBox justifyContent="space-between">
@@ -397,10 +397,10 @@ export default function ServiceTableRow(props) {
               </FlexBox>
             </Box>
 
-            <Divider />
+            <Divider /> */}
 
             {/* Safety & Quality Scores */}
-            <Box>
+            {/* <Box>
               <Paragraph variant="h6" gutterBottom>{t("Safety & Quality")}</Paragraph>
               <FlexBox flexDirection="column" gap={1}>
                 <FlexBox justifyContent="space-between">
@@ -426,10 +426,10 @@ export default function ServiceTableRow(props) {
                   </FlexBox>
                 )}
               </FlexBox>
-            </Box>
+            </Box> */}
 
             {/* QA Information */}
-            {(output?.qa_reviewed || output?.qa_notes) && (
+            {/* {(output?.qa_reviewed || output?.qa_notes) && (
               <>
                 <Divider />
                 <Box>
@@ -456,7 +456,7 @@ export default function ServiceTableRow(props) {
                   </FlexBox>
                 </Box>
               </>
-            )}
+            )} */}
           </Box>
         </DialogContent>
         <DialogActions>

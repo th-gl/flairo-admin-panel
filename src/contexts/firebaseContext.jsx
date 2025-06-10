@@ -90,7 +90,7 @@ export function AuthProvider({
         dispatch({
           type: 'AUTH_STATE_CHANGED',
           payload: {
-            isAuthenticated: false,
+            isAuthenticated: false, 
             user: null
           }
         });

@@ -9,7 +9,7 @@ import { FlexBox } from "@/components/flexbox";
 import { useEffect, useCallback, useState } from "react";
 import Apps from "@/icons/Apps";
 import FormatBullets from "@/icons/FormatBullets";
-import { getServices } from "@/page-sections/services/request";
+import { getServices } from "@/page-sections/users/request";
 import { Paragraph } from "../../components/typography/index.jsx";
 import IconWrapper from "@/components/icon-wrapper";
 import Chat from "@/icons/Chat.jsx";

@@ -9,7 +9,13 @@ import Scrollbar from "@/components/scrollbar";
 import { TableDataNotFound, TableToolbar } from "@/components/table"; // CUSTOM PAGE SECTION COMPONENTS
 
 import useMuiTable, { getComparator, stableSort } from "@/hooks/useMuiTable"; // CUSTOM DUMMY DATA
-import { AI_PROMPTS_LIST, PROMPT_CATEGORIES, PROMPT_STATUS, AI_MODELS_FOR_PROMPTS, PROMPT_STATS } from "@/__fakeData__/aiPrompts";
+import {
+  AI_PROMPTS_LIST,
+  PROMPT_CATEGORIES,
+  PROMPT_STATUS,
+  AI_MODELS_FOR_PROMPTS,
+  PROMPT_STATS,
+} from "@/__fakeData__/aiPrompts";
 import Table from "@mui/material/Table";
 import ServiceTableHead from "../ServiceTableHead.jsx";
 import TableBody from "@mui/material/TableBody";
@@ -35,7 +41,7 @@ import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 
 export default function ServiceList() {
-    const { t} = useTranslation();
+  const { t } = useTranslation();
   const {
     page,
     rowsPerPage,
@@ -51,17 +57,17 @@ export default function ServiceList() {
   } = useMuiTable({ defaultOrderBy: "updated_at" });
 
   const [users, setUsers] = useState([]);
-  const [userFilter, setUserFilter] = useState({ 
-    role: "", 
-    search: "", 
+  const [userFilter, setUserFilter] = useState({
+    role: "",
+    search: "",
     category: "",
     status: "",
     author: "",
-    complexity: ""
+    complexity: "",
   });
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [sortData ,setSortData]= useState({name:'',order:''})
+  const [sortData, setSortData] = useState({ name: "", order: "" });
 
   // AI prompt specific state
   const [aiPromptData, setAiPromptData] = useState(AI_PROMPTS_LIST);
@@ -76,43 +82,46 @@ export default function ServiceList() {
 
   // Enhanced filtering for AI prompts
   const filteredUsers = stableSort(
-    showMockData ? aiPromptData : users, 
+    showMockData ? aiPromptData : users,
     getComparator(order, orderBy)
   ).filter((item) => {
     let matches = true;
-    
+
     if (userFilter.role && item.role) {
       matches = matches && item.role.toLowerCase() === userFilter.role;
     }
-    
+
     if (userFilter.search) {
       const searchTerm = userFilter.search.toLowerCase();
-      matches = matches && (
-        (item.name && item.name.toLowerCase().includes(searchTerm)) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm)) ||
-        (item.category && item.category.toLowerCase().includes(searchTerm)) ||
-        (item.author && item.author.toLowerCase().includes(searchTerm)) ||
-        (item.prompt_text && item.prompt_text.toLowerCase().includes(searchTerm)) ||
-        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
-      );
+      matches =
+        matches &&
+        ((item.name && item.name.toLowerCase().includes(searchTerm)) ||
+          (item.description &&
+            item.description.toLowerCase().includes(searchTerm)) ||
+          (item.category && item.category.toLowerCase().includes(searchTerm)) ||
+          (item.author && item.author.toLowerCase().includes(searchTerm)) ||
+          (item.prompt_text &&
+            item.prompt_text.toLowerCase().includes(searchTerm)) ||
+          (item.tags &&
+            item.tags.some((tag) => tag.toLowerCase().includes(searchTerm))));
     }
-    
+
     if (userFilter.category && item.category) {
       matches = matches && item.category === userFilter.category;
     }
-    
+
     if (userFilter.status && item.status) {
       matches = matches && item.status === userFilter.status;
     }
-    
+
     if (userFilter.author && item.author) {
       matches = matches && item.author === userFilter.author;
     }
-    
+
     if (userFilter.complexity && item.complexity) {
       matches = matches && item.complexity === userFilter.complexity;
     }
-    
+
     return matches;
   });
 
@@ -126,7 +135,9 @@ export default function ServiceList() {
 
   const handleAllUserDelete = () => {
     if (showMockData) {
-      setAiPromptData((state) => state.filter((item) => !selected.includes(item.id)));
+      setAiPromptData((state) =>
+        state.filter((item) => !selected.includes(item.id))
+      );
     } else {
       setUsers((state) => state.filter((item) => !selected.includes(item.id)));
     }
@@ -136,7 +147,13 @@ export default function ServiceList() {
   const fetchList = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getServices("", rowsPerPage, page,sortData.order,sortData.name);
+      const response = await getServices(
+        "",
+        rowsPerPage,
+        page,
+        sortData.order,
+        sortData.name
+      );
       // console.log(response);
       if (response.success) {
         setUsers(response.data);
@@ -149,7 +166,7 @@ export default function ServiceList() {
     } finally {
       setLoading(false);
     }
-  }, [rowsPerPage, page,sortData.order,sortData.name]);
+  }, [rowsPerPage, page, sortData.order, sortData.name]);
 
   const handleDeleteService = async (id) => {
     try {
@@ -162,9 +179,12 @@ export default function ServiceList() {
         } else {
           handleDeleteUser(id);
         }
-      }
-      else {
-        toast.error(t("This prompt cannot be deleted as it may be referenced by other data."));
+      } else {
+        toast.error(
+          t(
+            "This prompt cannot be deleted as it may be referenced by other data."
+          )
+        );
       }
     } catch (error) {
       console.error(error);
@@ -209,15 +229,12 @@ export default function ServiceList() {
     }
   }, [fetchList, showMockData]);
 
-  const handleSort=(sortOrder,sortField)=>{
-    setSortData({order:sortOrder,name:sortField})
-  }
+  const handleSort = (sortOrder, sortField) => {
+    setSortData({ order: sortOrder, name: sortField });
+  };
 
   const resetUsers = (user) => {
-    setUsers((state) => [
-      ...state.filter((item) => item.id !== user.id),
-      user,
-    ]);
+    setUsers((state) => [...state.filter((item) => item.id !== user.id), user]);
   };
 
   const toggleDataSource = () => {
@@ -228,19 +245,22 @@ export default function ServiceList() {
   };
 
   // Get unique authors for filtering
-  const uniqueAuthors = [...new Set(aiPromptData.map(prompt => prompt.author))];
+  const uniqueAuthors = [
+    ...new Set(aiPromptData.map((prompt) => prompt.author)),
+  ];
 
   return (
     <>
       <Card>
-        <HeadingArea 
+        <HeadingArea
           title={t("AI Prompts Management")}
           subtitle={t("Manage and edit your AI prompt templates")}
         />
- 
+
         {/* Filters */}
         <Box sx={{ p: 3, borderBottom: "1px solid #e0e0e0" }}>
-          <FlexBox gap={2} alignItems="center" flexWrap="wrap">
+          <FlexBox gap={2} alignItems="center" justifyContent="space-between" flexWrap="wrap">
+            <Box sx={{ display: "flex", gap: 2 }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>{t("Category")}</InputLabel>
               <Select
@@ -288,22 +308,27 @@ export default function ServiceList() {
                 ))}
               </Select>
             </FormControl>
+            </Box>
+      
 
-            <Button
+
+            <Box>
+              <Button
+                variant="outlined"
+                onClick={toggleDataSource}
+                sx={{ ml: "auto" }}
+                size="small"
+              >
+                {showMockData ? t("Use Live Data") : t("Use Demo Data")}
+              </Button>
+            </Box>
+            {/* <Button
               variant="contained"
               startIcon={<AddIcon />}
               sx={{ ml: "auto" }}
             >
               {t("Create New Prompt")}
-            </Button>
-
-            <Button
-              variant="outlined"
-              onClick={toggleDataSource}
-              size="small"
-            >
-              {showMockData ? t("Use Live Data") : t("Use Demo Data")}
-            </Button>
+            </Button> */}
           </FlexBox>
         </Box>
 
@@ -313,11 +338,12 @@ export default function ServiceList() {
           placeholder={t("Search prompts, descriptions, authors...")}
         />
 
-        <TableToolbar
-          title={t("AI Prompts")}
-          numSelected={selected.length}
-          handleDeleteRows={handleMultipleDeleteService}
-        />
+        {selected.length > 0 && (
+          <TableToolbar
+            selected={selected.length}
+            handleDeleteRows={handleMultipleDeleteService}
+          />
+        )}
 
         <Scrollbar>
           <TableContainer sx={{ minWidth: 900 }}>

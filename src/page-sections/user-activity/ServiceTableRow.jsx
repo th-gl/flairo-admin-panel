@@ -184,20 +184,20 @@ export default function ServiceTableRow(props) {
               handleClick={handleViewDetails}
             />
 
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={BlockIcon}
               title={activity?.status === DEVICE_STATUS.BLOCKED ? t("Unblock Device") : t("Block Device")}
               handleClick={handleToggleBlockDevice}
-            />
+            /> */}
 
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit")}
               handleClick={() => {
                 handleCloseOpenMenu();
                 navigate(`/user-activity-edit/${activity.id}`);
               }}
-            />
+            /> */}
 
             <TableMoreMenuItem
               Icon={DeleteOutline}

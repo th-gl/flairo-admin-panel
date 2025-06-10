@@ -217,14 +217,14 @@ export default function UserTableRow(props) {
               handleClick={handleAccessLevelManagement}
             />
             
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit User")}
               handleClick={() => {
                 handleCloseOpenMenu();
                 navigate(`/user-edit/${user.id}`);
               }}
-            />
+            /> */}
 
             <TableMoreMenuItem
               Icon={DeleteOutline}

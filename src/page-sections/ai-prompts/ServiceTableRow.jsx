@@ -25,6 +25,7 @@ import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
 import { PROMPT_STATUS, PROMPT_CATEGORIES, AI_MODELS_FOR_PROMPTS, PROMPT_COMPLEXITY } from "@/__fakeData__/aiPrompts";
+import { alpha } from "@mui/material/styles";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -141,13 +142,34 @@ export default function ServiceTableRow(props) {
 
   return (
     <>
-      <TableRow hover>
+      <TableRow 
+        hover
+        selected={isSelected}
+        sx={{
+          '&.Mui-selected': {
+            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            '&:hover': {
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+            },
+          },
+          cursor: 'pointer',
+          transition: 'all 0.2s ease-in-out',
+        }}
+      >
         <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
             checked={isSelected}
             onClick={(event) => handleSelectRow(event, prompt.id)}
+            sx={{
+              '&.Mui-checked': {
+                color: 'primary.main',
+              },
+              '&:hover': {
+                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              },
+            }}
           />
         </TableCell>
 
@@ -251,15 +273,15 @@ export default function ServiceTableRow(props) {
         {/* Actions */}
         <TableCell padding="normal">
           <TableMoreMenu
-            open={Boolean(openMenuEl)}
-            anchorEl={openMenuEl}
+            open={openMenuEl}
+            handleOpen={handleOpenMenu}
             handleClose={handleCloseOpenMenu}
           >
-            {/* <TableMoreMenuItem
+            <TableMoreMenuItem
               Icon={VisibilityIcon}
               title={t("View Details")}
               handleClick={handleViewDetails}
-            /> */}
+            />
             <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit Prompt")}
@@ -274,22 +296,13 @@ export default function ServiceTableRow(props) {
               Icon={ContentCopy}
               title={t("Duplicate")}
               handleClick={handleDuplicatePrompt}
-            /> */}
-            {/* <TableMoreMenuItem
+            />   */}
+            <TableMoreMenuItem
               Icon={DeleteOutline}
               title={t("Delete")}
               handleClick={handleDeleteConfirmation}
-            /> */}
+            />
           </TableMoreMenu>
-
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleOpenMenu}
-            sx={{ minWidth: "auto", padding: "4px 8px" }}
-          >
-            •••
-          </Button>
         </TableCell>
       </TableRow>
 
@@ -376,7 +389,7 @@ export default function ServiceTableRow(props) {
 
             <Divider sx={{ my: 2 }} />
 
-            <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
+            {/* <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
               {t("Performance Metrics")}:
             </Paragraph>
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
@@ -404,9 +417,9 @@ export default function ServiceTableRow(props) {
                   <Paragraph>({prompt?.user_rating})</Paragraph>
                 </FlexBox>
               </Box>
-            </Box>
+            </Box> */}
 
-            <Divider sx={{ my: 2 }} />
+            {/* <Divider sx={{ my: 2 }} />
 
             <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
               {t("Tags & Use Cases")}:
@@ -420,7 +433,7 @@ export default function ServiceTableRow(props) {
               {prompt?.use_cases?.map((useCase, index) => (
                 <Chip key={index} label={useCase} size="small" variant="outlined" />
               ))}
-            </FlexBox>
+            </FlexBox> */}
           </Box>
         </DialogContent>
         <DialogActions>
@@ -469,7 +482,7 @@ export default function ServiceTableRow(props) {
               rows={8}
               sx={{ fontFamily: "monospace" }}
             />
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, mt: 2 }}>
+            {/* <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, mt: 2 }}>
               <TextField
                 select
                 label={t("Category")}
@@ -506,7 +519,7 @@ export default function ServiceTableRow(props) {
                   </option>
                 ))}
               </TextField>
-            </Box>
+            </Box> */}
           </Box>
         </DialogContent>
         <DialogActions>
