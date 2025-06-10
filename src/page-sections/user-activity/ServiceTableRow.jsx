@@ -22,17 +22,41 @@ import { FLOW_BEHAVIOR, DEVICE_STATUS } from "@/__fakeData__/userActivity";
 const getFlowBehaviorColor = (behavior) => {
   switch (behavior) {
     case FLOW_BEHAVIOR.NORMAL:
-      return { color: "success", textColor: "#2e7d32" };
+      return { 
+        backgroundColor: "#dcfce7", 
+        textColor: "#166534",
+        borderColor: "#22c55e"
+      };
     case FLOW_BEHAVIOR.SUSPICIOUS:
-      return { color: "error", textColor: "#d32f2f" };
+      return { 
+        backgroundColor: "#fee2e2", 
+        textColor: "#dc2626",
+        borderColor: "#ef4444"
+      };
     case FLOW_BEHAVIOR.HIGH_USAGE:
-      return { color: "warning", textColor: "#ed6c02" };
+      return { 
+        backgroundColor: "#fef3c7", 
+        textColor: "#92400e",
+        borderColor: "#f59e0b"
+      };
     case FLOW_BEHAVIOR.IDLE:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#4b5563",
+        borderColor: "#9ca3af"
+      };
     case FLOW_BEHAVIOR.PEAK:
-      return { color: "info", textColor: "#0288d1" };
+      return { 
+        backgroundColor: "#dbeafe", 
+        textColor: "#1d4ed8",
+        borderColor: "#3b82f6"
+      };
     default:
-      return { color: "default", textColor: "#666" };
+      return { 
+        backgroundColor: "#f3f4f6", 
+        textColor: "#6b7280",
+        borderColor: "#d1d5db"
+      };
   }
 };
 
@@ -159,9 +183,15 @@ export default function ServiceTableRow(props) {
             label={activity?.flow_behavior || "Unknown"}
             size="small"
             sx={{
-              backgroundColor: `${flowBehaviorStyle.textColor}15`,
+              backgroundColor: flowBehaviorStyle.backgroundColor,
               color: flowBehaviorStyle.textColor,
-              fontWeight: 500
+              border: `1px solid ${flowBehaviorStyle.borderColor}`,
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: '28px',
+              '& .MuiChip-label': {
+                px: 1.5,
+              }
             }}
           />
           {activity?.risk_score !== undefined && (
