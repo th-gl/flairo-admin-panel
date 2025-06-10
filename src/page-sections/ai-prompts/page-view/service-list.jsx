@@ -322,13 +322,6 @@ export default function ServiceList() {
                 {showMockData ? t("Use Live Data") : t("Use Demo Data")}
               </Button>
             </Box>
-            {/* <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{ ml: "auto" }}
-            >
-              {t("Create New Prompt")}
-            </Button> */}
           </FlexBox>
         </Box>
 
