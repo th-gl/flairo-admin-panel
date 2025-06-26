@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
@@ -22,6 +22,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import { collection, getDocs } from "firebase/firestore"; 
 import { OUTPUT_STATUS, AI_MODELS, CONFIDENCE_LEVELS } from "@/__fakeData__/aiOutputs";
 
 const getStatusColor = (status) => {
@@ -94,6 +96,9 @@ export default function ServiceTableRow(props) {
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [openQADialog, setOpenQADialog] = useState(false);
 
+
+
+
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
   };
@@ -158,7 +163,7 @@ export default function ServiceTableRow(props) {
 
   const statusStyle = getStatusColor(output?.status);
   const modelStyle = getModelColor(output?.ai_model);
-  const confidenceStyle = getConfidenceColor(output?.confidence_score);
+  const confidenceStyle = getConfidenceColor(output?.confidence_score)
 
   return (
     <>

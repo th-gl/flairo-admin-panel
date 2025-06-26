@@ -39,6 +39,22 @@ import Chip from "@mui/material/Chip";
 import { Paragraph } from "@/components/typography";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+
+import TextField from "@mui/material/TextField";
+import { Grid, Grid2 } from "@mui/material";
 
 export default function ServiceList() {
   const { t } = useTranslation();
@@ -68,10 +84,50 @@ export default function ServiceList() {
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(0);
   const [sortData, setSortData] = useState({ name: "", order: "" });
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState(null);
+  const [isEditing, setIsEditing] = useState(null);
 
   // AI prompt specific state
   const [aiPromptData, setAiPromptData] = useState(AI_PROMPTS_LIST);
   const [showMockData, setShowMockData] = useState(true); // Default to mock data for prompts
+  const [newPrompt, setNewPrompt] = useState({
+    name: "",
+    key: "",
+    prompt: "",
+    revenuecat_api_key: "",
+  });
+
+  const fetchAIPrompts = async () => {
+    const snapshot = await getDocs(collection(DB, "aiPrompts"));
+    const dataprompt = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+      };
+    });
+    setUsers(dataprompt);
+    setTotalRecords(dataprompt.length);
+  };
+
+  useEffect(() => {
+    fetchAIPrompts();
+  }, []);
+
+  useEffect(() => {
+    console.log("is editing true useeffect");
+    if (isEditing) {
+      setNewPrompt({
+        name: newPrompt.name,
+        key: newPrompt.key,
+        prompt: newPrompt.prompt,
+        revenuecat_api_key: newPrompt.revenuecat_api_key,
+      });
+    }
+  }, [isEditing]);
 
   const handleChangeFilter = (key, value) => {
     setUserFilter((state) => ({
@@ -248,6 +304,135 @@ export default function ServiceList() {
   const uniqueAuthors = [
     ...new Set(aiPromptData.map((prompt) => prompt.author)),
   ];
+  const handleAddPrompt = () => {
+    setIsEditing(false);
+    console.log("click");
+    setOpenAddDialog(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setOpenAddDialog(false);
+    setIsEditing(false);
+    setNewPrompt({
+      name: "",
+      key: "",
+      prompt: "",
+      revenuecat_api_key: "",
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewPrompt((prev) => ({ ...prev, [name]: value }));
+  };
+  // const handleAddNewPrompt = async () => {
+  //   if (!newPrompt.name) {
+  //     toast.error(`Please fill the prompt name`);
+  //     return;
+  //   }
+  //   if (!newPrompt.key) {
+  //     toast.error(`Please fill the prompt key`);
+  //     return;
+  //   }
+  //   if (!newPrompt.revenuecat_api_key) {
+  //     toast.error(`Please fill the revenuecat api key`);
+  //     return;
+  //   }
+  //   if (!newPrompt?.prompt) {
+  //     toast.error(`Please fill the prompt filed`);
+  //     return;
+  //   }
+  //   try {
+  //     const docRef = await addDoc(collection(DB, "aiPrompts"), {
+  //       ...newPrompt,
+  //       createdAt: new Date(),
+  //       updatedAt: new Date(),
+  //     });
+
+  //     toast.success("Prompt added successfully");
+  //     setOpenAddDialog(false);
+  //     setNewPrompt({
+  //       name: "",
+  //       key: "",
+  //       prompt: "",
+  //       createdAt: "",
+  //       updatedAt: "",
+  //       revenuecat_api_key: "",
+  //     });
+
+  //     // Optionally refresh the list
+  //     if (!showMockData) {
+  //       fetchAIPrompts(); // re-fetch from Firestore
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding prompt: ", error);
+  //     toast.error("Failed to add prompt");
+  //   }
+  // };
+  const handleEditPrompt = (prompt) => {
+    console.log("promptddd", prompt);
+    setIsEditing(true);
+    setCurrentPrompt(prompt);
+    // if(isEditing){
+    setNewPrompt({
+      name: prompt.name,
+      key: prompt.key,
+      prompt: prompt.prompt,
+      revenuecat_api_key: prompt.revenuecat_api_key || "",
+    });
+    // }
+
+    setOpenAddDialog(true);
+  };
+
+  const handleAddNewPrompt = async () => {
+    try {
+      // Validate required fields
+      if (!newPrompt.name || !newPrompt.key || !newPrompt.prompt) {
+        toast.error(t("Please fill all required fields"));
+        return;
+      }
+
+      const currentTime = new Date();
+      const promptData = {
+        name: newPrompt.name,
+        key: newPrompt.key,
+        prompt: newPrompt.prompt,
+        revenuecat_api_key: newPrompt.revenuecat_api_key,
+        updatedAt: currentTime,
+      };
+
+      if (isEditing && currentPrompt) {
+        // Update existing document - merge with existing data
+        await updateDoc(doc(DB, "aiPrompts", currentPrompt.id), {
+          ...promptData,
+          createdAt: currentPrompt.createdAt, // Preserve original creation time
+        });
+        toast.success(t("Prompt updated successfully"));
+      } else {
+        // Create new document
+        await addDoc(collection(DB, "aiPrompts"), {
+          ...promptData,
+          createdAt: currentTime,
+        });
+        toast.success(t("Prompt added successfully"));
+      }
+
+      await fetchAIPrompts();
+      setOpenAddDialog(false);
+      setIsEditing(false);
+      setCurrentPrompt(null);
+      setNewPrompt({
+        name: "",
+        key: "",
+        prompt: "",
+        revenuecat_api_key: "",
+      });
+    } catch (error) {
+      console.error("Error saving prompt:", error);
+      toast.error(t("Failed to save prompt"));
+    }
+  };
 
   return (
     <>
@@ -259,67 +444,80 @@ export default function ServiceList() {
 
         {/* Filters */}
         <Box sx={{ p: 3, borderBottom: "1px solid #e0e0e0" }}>
-          <FlexBox gap={2} alignItems="center" justifyContent="space-between" flexWrap="wrap">
+          <FlexBox
+            gap={2}
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+          >
             <Box sx={{ display: "flex", gap: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t("Category")}</InputLabel>
-              <Select
-                value={userFilter.category}
-                label={t("Category")}
-                onChange={(e) => handleChangeFilter("category", e.target.value)}
-              >
-                <MenuItem value="">{t("All Categories")}</MenuItem>
-                {Object.values(PROMPT_CATEGORIES).map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              {/* <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>{t("Category")}</InputLabel>
+                <Select
+                  value={userFilter.category}
+                  label={t("Category")}
+                  onChange={(e) =>
+                    handleChangeFilter("category", e.target.value)
+                  }
+                >
+                  <MenuItem value="">{t("All Categories")}</MenuItem>
+                  {Object.values(PROMPT_CATEGORIES).map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl> */}
 
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>{t("Status")}</InputLabel>
-              <Select
-                value={userFilter.status}
-                label={t("Status")}
-                onChange={(e) => handleChangeFilter("status", e.target.value)}
-              >
-                <MenuItem value="">{t("All Status")}</MenuItem>
-                {Object.values(PROMPT_STATUS).map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              {/* <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>{t("Status")}</InputLabel>
+                <Select
+                  value={userFilter.status}
+                  label={t("Status")}
+                  onChange={(e) => handleChangeFilter("status", e.target.value)}
+                >
+                  <MenuItem value="">{t("All Status")}</MenuItem>
+                  {Object.values(PROMPT_STATUS).map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl> */}
 
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>{t("Author")}</InputLabel>
-              <Select
-                value={userFilter.author}
-                label={t("Author")}
-                onChange={(e) => handleChangeFilter("author", e.target.value)}
-              >
-                <MenuItem value="">{t("All Authors")}</MenuItem>
-                {uniqueAuthors.map((author) => (
-                  <MenuItem key={author} value={author}>
-                    {author}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              {/* <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>{t("Author")}</InputLabel>
+                <Select
+                  value={userFilter.author}
+                  label={t("Author")}
+                  onChange={(e) => handleChangeFilter("author", e.target.value)}
+                >
+                  <MenuItem value="">{t("All Authors")}</MenuItem>
+                  {uniqueAuthors.map((author) => (
+                    <MenuItem key={author} value={author}>
+                      {author}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl> */}
             </Box>
-      
 
-
-            <Box>
-              <Button
+            <Box sx={{ display: "flex", gap: "10px" }}>
+              {/* <Button
                 variant="outlined"
                 onClick={toggleDataSource}
                 sx={{ ml: "auto" }}
                 size="small"
               >
                 {showMockData ? t("Use Live Data") : t("Use Demo Data")}
+              </Button> */}
+              <Button
+                variant="outlined"
+                sx={{ ml: "auto" }}
+                size="small"
+                onClick={handleAddPrompt}
+              >
+                {t("Add Prompt")}
               </Button>
             </Box>
           </FlexBox>
@@ -356,10 +554,10 @@ export default function ServiceList() {
               <TableBody>
                 {loading ? (
                   <TableSkeleton />
-                ) : filteredUsers.length === 0 ? (
+                ) : users.length === 0 ? (
                   <TableDataNotFound />
                 ) : (
-                  filteredUsers
+                  users
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((user, index) => (
                       <ServiceTableRow
@@ -369,6 +567,9 @@ export default function ServiceList() {
                         handleSelectRow={handleSelectRow}
                         handleDeleteService={handleDeleteService}
                         resetUsers={resetUsers}
+                        fetchAIPrompts={fetchAIPrompts}
+                        handleEdit={handleEditPrompt}
+                        setOpenAddDialog={setOpenAddDialog}
                       />
                     ))
                 )}
@@ -387,6 +588,113 @@ export default function ServiceList() {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Card>
+      <Dialog
+        open={openAddDialog}
+        onClose={handleDeleteCancel}
+        maxWidth="lg"
+        fullWidth
+        aria-labelledby="edit-dialog-title"
+      >
+        <DialogTitle id="edit-dialog-title">
+          {isEditing ? t("Edit Prompt") : t("Add New Prompt")}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Api Key")}
+                  margin="normal"
+                  name="key"
+                  value={newPrompt.key}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Revenuecat Api key")}
+                  margin="normal"
+                  name="revenuecat_api_key"
+                  value={newPrompt.revenuecat_api_key}
+                  onChange={handleInputChange}
+                />
+              </Grid>
+            </Grid>
+            <TextField
+              fullWidth
+              label={t("Prompt Name")}
+              margin="normal"
+              name="name"
+              value={newPrompt.name}
+              onChange={handleInputChange}
+            />
+
+            <TextField
+              fullWidth
+              label={t("Prompt")}
+              margin="normal"
+              multiline
+              name="prompt"
+              value={newPrompt.prompt}
+              onChange={handleInputChange}
+              rows={8}
+              sx={{ fontFamily: "monospace" }}
+            />
+            {/* <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, mt: 2 }}>
+                    <TextField
+                      select
+                      label={t("Category")}
+                      defaultValue={prompt?.category}
+                      SelectProps={{ native: true }}
+                    >
+                      {Object.values(PROMPT_CATEGORIES).map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label={t("Status")}
+                      defaultValue={prompt?.status}
+                      SelectProps={{ native: true }}
+                    >
+                      {Object.values(PROMPT_STATUS).map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </TextField>
+                    <TextField
+                      select
+                      label={t("Recommended Model")}
+                      defaultValue={prompt?.recommended_model}
+                      SelectProps={{ native: true }}
+                    >
+                      {Object.values(AI_MODELS_FOR_PROMPTS).map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </TextField>
+                  </Box> */}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" onClick={handleDeleteCancel}>
+            {t("Cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddNewPrompt}
+          >
+            {isEditing ? t("Update Prompt") : t("Save Prompt")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

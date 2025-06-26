@@ -38,19 +38,19 @@ export default function ServiceTableHead(props) {
     const { t } = useTranslation();
     const headCells = [
       {
-        id: "device_id",
+        id: "uid",
         numeric: true,
         disablePadding: false,
-        label: t("Device ID"),
+        label: t("Uid"),
         sortable: false, // Enable sorting
       },
-      {
-        id: "frequency",
-        numeric: true,
-        disablePadding: false,
-        label: t("Frequency"),
-        sortable: false, // Disable sorting
-      },
+      // {
+      //   id: "frequency",
+      //   numeric: true,
+      //   disablePadding: false,
+      //   label: t("Frequency"),
+      //   sortable: false, // Disable sorting
+      // },
       {
         id: "timeStamps",
         numeric: false,
@@ -58,13 +58,7 @@ export default function ServiceTableHead(props) {
         label: t("Time Stamps"),
         sortable: true,
       },
-      {
-        id: "flowBehavior",
-        numeric: true,
-        disablePadding: false,
-        label: t("Flow Behavior"),
-        sortable: true,
-      },
+      
       {
         id: "actions",
         numeric: true,
@@ -137,7 +131,7 @@ export default function ServiceTableHead(props) {
         }}
       >
         <TableRow>
-          <TableCell padding="checkbox">
+          {/* <TableCell padding="checkbox">
             <Checkbox
               size="small"
               color="primary"
@@ -145,7 +139,7 @@ export default function ServiceTableHead(props) {
               checked={rowCount > 0 && numSelected === rowCount}
               indeterminate={numSelected > 0 && numSelected < rowCount}
             />
-          </TableCell>
+          </TableCell> */}
 {/* 
           {headCells.map((headCell) => (
             <TableCell
