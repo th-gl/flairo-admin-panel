@@ -23,9 +23,25 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
+import { TextField as Textarea } from "@mui/material"; 
 import TextareaAutosize from "@mui/material/TextareaAutosize";
-import { PROMPT_STATUS, PROMPT_CATEGORIES, AI_MODELS_FOR_PROMPTS, PROMPT_COMPLEXITY } from "@/__fakeData__/aiPrompts";
+
+import {
+  PROMPT_STATUS,
+  PROMPT_CATEGORIES,
+  AI_MODELS_FOR_PROMPTS,
+  PROMPT_COMPLEXITY,
+} from "@/__fakeData__/aiPrompts";
 import { alpha } from "@mui/material/styles";
+import { doc, updateDoc, deleteField,deleteDoc } from "firebase/firestore";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import { toast } from "react-toastify";
+import {
+  Grid,
+  IconButton,
+  Tooltip
+} from "@mui/material";
+
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -55,14 +71,20 @@ const getCategoryColor = (category) => {
     [PROMPT_CATEGORIES.CLASSIFICATION]: "#795548",
     [PROMPT_CATEGORIES.CREATIVE_WRITING]: "#e91e63",
     [PROMPT_CATEGORIES.PRODUCT_DESCRIPTION]: "#ff9800",
-    [PROMPT_CATEGORIES.EMAIL_GENERATION]: "#607d8b"
+    [PROMPT_CATEGORIES.EMAIL_GENERATION]: "#607d8b",
   };
   return colors[category] || "#666";
 };
 
 export default function ServiceTableRow(props) {
+  console.log("props", props);
+
   const { t } = useTranslation();
-  const { user: prompt, isSelected, handleSelectRow, handleDeleteService } = props;
+  const { user, prompt, isSelected, handleSelectRow, handleDeleteService,fetchAIPrompts,handleEdit,
+    setOpenAddDialog
+   } =
+    props;
+  console.log("userrr", user);
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -70,9 +92,11 @@ export default function ServiceTableRow(props) {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openTestDialog, setOpenTestDialog] = useState(false);
 
+
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
   };
+
 
   const handleCloseOpenMenu = () => setOpenMenuEl(null);
 
@@ -82,17 +106,28 @@ export default function ServiceTableRow(props) {
     handleCloseOpenMenu();
   };
 
-  const handleDeleteCancel = () => {
-    setOpenDialog(false);
-  };
+    const handleDeleteConfirm = async (userId) => {
+      console.log("userId", userId);
+  
+      try {
+        const userRef = doc(DB, "aiPrompts", userId); // 'react' is the collection name
+        await deleteDoc(userRef);
+        toast.success(t("Prompt deleted successfully"));
+       setOpenDialog(false);
+        await fetchAIPrompts();
+      } catch (error) {
+        console.error("Error deleting user: ", error);
+        throw error;
+      }
+    };
 
-  const handleDeleteConfirm = () => {
-    handleDeleteService(prompt?.id);
+  const handleDeleteCancel = () => {
     setOpenDialog(false);
   };
 
   // View details
   const handleViewDetails = () => {
+    fetchAIPrompts();
     setOpenDetailDialog(true);
     handleCloseOpenMenu();
   };
@@ -103,7 +138,7 @@ export default function ServiceTableRow(props) {
 
   // Edit prompt
   const handleEditPrompt = () => {
-    setOpenEditDialog(true);
+    setOpenAddDialog(true);
     handleCloseOpenMenu();
   };
 
@@ -134,7 +169,9 @@ export default function ServiceTableRow(props) {
 
   const truncateText = (text, maxLength = 50) => {
     if (!text) return "-";
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    return text.length > maxLength
+      ? `${text.substring(0, maxLength)}...`
+      : text;
   };
 
   const statusStyle = getStatusColor(prompt?.status);
@@ -142,133 +179,92 @@ export default function ServiceTableRow(props) {
 
   return (
     <>
-      <TableRow 
+      <TableRow
         hover
         selected={isSelected}
-        sx={{
-          '&.Mui-selected': {
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-            '&:hover': {
-              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
-            },
-          },
-          cursor: 'pointer',
-          transition: 'all 0.2s ease-in-out',
-        }}
+      
       >
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
             checked={isSelected}
             onClick={(event) => handleSelectRow(event, prompt.id)}
             sx={{
-              '&.Mui-checked': {
-                color: 'primary.main',
+              "&.Mui-checked": {
+                color: "primary.main",
               },
-              '&:hover': {
-                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              "&:hover": {
+                backgroundColor: (theme) =>
+                  alpha(theme.palette.primary.main, 0.1),
               },
             }}
           />
-        </TableCell>
+        </TableCell> */}
 
         {/* Prompt Name */}
         <TableCell padding="normal">
           <FlexBox alignItems="center" gap={2}>
             <div>
               <Paragraph fontWeight={500} color="text.primary">
-                {prompt?.name || "-"}
+                {user?.name || "-"}
               </Paragraph>
-              <Paragraph fontSize={12} color="text.secondary">
-                {truncateText(prompt?.description)}
+            </div>
+          </FlexBox>
+        
+        </TableCell>
+          <TableCell padding="normal">
+    
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+               
+                 {user?.key || "-"}
+              </Paragraph>
+            </div>
+        
+        
+        </TableCell>
+            <TableCell padding="normal">
+    
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+               
+                 {user?.revenuecat_api_key || "-"}
+              </Paragraph>
+            </div>
+        
+        
+        </TableCell>
+           {/* <TableCell padding="normal">
+    
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+                {user?.prompt || "-"}
+              </Paragraph>
+            </div>
+        
+        
+        </TableCell> */}
+        <TableCell padding="normal">
+          <FlexBox alignItems="center" gap={2}>
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+                {user?.updatedAt
+                  ? `${user.updatedAt.toLocaleTimeString("en-GB", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}, ${user.updatedAt.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}`
+                  : "-"}
               </Paragraph>
             </div>
           </FlexBox>
         </TableCell>
 
-        {/* Category */}
-        <TableCell padding="normal">
-          <Chip
-            label={prompt?.category || "Uncategorized"}
-            size="small"
-            sx={{
-              backgroundColor: `${categoryColor}15`,
-              color: categoryColor,
-              fontWeight: 500
-            }}
-          />
-        </TableCell>
-
-        {/* Status */}
-        {/* <TableCell padding="normal">
-          <Chip
-            label={prompt?.status || "Unknown"}
-            size="small"
-            sx={{
-              backgroundColor: `${statusStyle.textColor}15`,
-              color: statusStyle.textColor,
-              fontWeight: 500
-            }}
-          />
-          {prompt?.is_current_version && (
-            <Chip
-              label="Current"
-              size="small"
-              sx={{
-                ml: 1,
-                backgroundColor: "#2e7d3215",
-                color: "#2e7d32",
-                fontWeight: 500
-              }}
-            />
-          )}
-        </TableCell> */}
-
-        {/* Version */}
-        {/* <TableCell padding="normal">
-          <Paragraph fontWeight={500}>
-            v{prompt?.version || "1.0"}
-          </Paragraph>
-          <Paragraph fontSize={12} color="text.secondary">
-            {prompt?.complexity}
-          </Paragraph>
-        </TableCell> */}
-
-        {/* Usage Count */}
-        <TableCell padding="normal">
-          <Paragraph fontWeight={500}>
-            {prompt?.usage_count?.toLocaleString() || "0"}
-          </Paragraph>
-          <Paragraph fontSize={12} color="text.secondary">
-            {prompt?.success_rate}% success
-          </Paragraph>
-        </TableCell>
-
-        {/* Rating */}
-        {/* <TableCell padding="normal">
-          <FlexBox alignItems="center" gap={1}>
-            <Rating
-              size="small"
-              value={parseFloat(prompt?.user_rating) || 0}
-              readOnly
-              precision={0.1}
-            />
-            <Paragraph fontSize={12} color="text.secondary">
-              ({prompt?.user_rating})
-            </Paragraph>
-          </FlexBox>
-        </TableCell> */}
-
-        {/* Last Updated */}
-        <TableCell padding="normal">
-          <Paragraph fontSize={13}>
-            {formatTimestamp(prompt?.updated_at)}
-          </Paragraph>
-          <Paragraph fontSize={12} color="text.secondary">
-            by {prompt?.last_modified_by}
-          </Paragraph>
-        </TableCell>
+       
 
         {/* Actions */}
         <TableCell padding="normal">
@@ -285,18 +281,9 @@ export default function ServiceTableRow(props) {
             <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit Prompt")}
-              handleClick={handleEditPrompt}
+             handleClick={() => handleEdit(user)} 
             />
-            {/* <TableMoreMenuItem
-              Icon={PlayArrow}
-              title={t("Test Prompt")}
-              handleClick={handleTestPrompt}
-            /> */}
-            {/* <TableMoreMenuItem
-              Icon={ContentCopy}
-              title={t("Duplicate")}
-              handleClick={handleDuplicatePrompt}
-            />   */}
+          
             <TableMoreMenuItem
               Icon={DeleteOutline}
               title={t("Delete")}
@@ -317,7 +304,7 @@ export default function ServiceTableRow(props) {
         </DialogTitle>
         <DialogContent>
           <Paragraph>
-            {t("Are you sure you want to delete")} "{prompt?.name}"? 
+            {t("Are you sure you want to delete")} "{prompt?.name}"?
             {t("This action cannot be undone.")}
           </Paragraph>
         </DialogContent>
@@ -325,267 +312,141 @@ export default function ServiceTableRow(props) {
           <Button onClick={handleDeleteCancel} color="inherit">
             {t("Cancel")}
           </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={()=>handleDeleteConfirm(user.id)}
+            color="error"
+            variant="contained"
+          >
             {t("Delete")}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Detail View Dialog */}
       <Dialog
         open={openDetailDialog}
         onClose={handleDetailDialogClose}
         maxWidth="md"
         fullWidth
-        aria-labelledby="detail-dialog-title"
       >
-        <DialogTitle id="detail-dialog-title">
-          {t("Prompt Details")}: {prompt?.name}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <FlexBox gap={2} mb={2} flexWrap="wrap">
-              <Chip label={`Category: ${prompt?.category}`} />
-              <Chip label={`Status: ${prompt?.status}`} />
-              <Chip label={`Version: v${prompt?.version}`} />
-              <Chip label={`Model: ${prompt?.recommended_model}`} />
-              <Chip label={`Complexity: ${prompt?.complexity}`} />
-            </FlexBox>
-            
-            <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-              {t("Description")}:
-            </Paragraph>
-            <Paragraph mb={2}>{prompt?.description}</Paragraph>
-
-            <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-              {t("Prompt Template")}:
-            </Paragraph>
-            <Box
-              sx={{
-                backgroundColor: "#f5f5f5",
-                padding: 2,
-                borderRadius: 1,
-                mb: 2,
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap"
-              }}
-            >
-              {prompt?.prompt_text}
-            </Box>
-
-            <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-              {t("Variables")}:
-            </Paragraph>
-            <FlexBox gap={1} mb={2} flexWrap="wrap">
-              {prompt?.variables?.map((variable, index) => (
-                <Chip
-                  key={index}
-                  label={`{${variable}}`}
-                  size="small"
-                  variant="outlined"
-                />
-              ))}
-            </FlexBox>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-              {t("Performance Metrics")}:
-            </Paragraph>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-              <Box>
-                <Paragraph fontSize={12} color="text.secondary">Usage Count</Paragraph>
-                <Paragraph fontWeight={500}>{prompt?.usage_count?.toLocaleString()}</Paragraph>
-              </Box>
-              <Box>
-                <Paragraph fontSize={12} color="text.secondary">Success Rate</Paragraph>
-                <Paragraph fontWeight={500}>{prompt?.success_rate}%</Paragraph>
-              </Box>
-              <Box>
-                <Paragraph fontSize={12} color="text.secondary">Avg Response Time</Paragraph>
-                <Paragraph fontWeight={500}>{prompt?.avg_response_time}ms</Paragraph>
-              </Box>
-              <Box>
-                <Paragraph fontSize={12} color="text.secondary">User Rating</Paragraph>
-                <FlexBox alignItems="center" gap={1}>
-                  <Rating
-                    size="small"
-                    value={parseFloat(prompt?.user_rating)}
-                    readOnly
-                    precision={0.1}
-                  />
-                  <Paragraph>({prompt?.user_rating})</Paragraph>
-                </FlexBox>
-              </Box>
-            </Box> */}
-
-            {/* <Divider sx={{ my: 2 }} />
-
-            <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-              {t("Tags & Use Cases")}:
-            </Paragraph>
-            <FlexBox gap={1} mb={2} flexWrap="wrap">
-              {prompt?.tags?.map((tag, index) => (
-                <Chip key={index} label={tag} size="small" color="primary" />
-              ))}
-            </FlexBox>
-            <FlexBox gap={1} flexWrap="wrap">
-              {prompt?.use_cases?.map((useCase, index) => (
-                <Chip key={index} label={useCase} size="small" variant="outlined" />
-              ))}
-            </FlexBox> */}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDetailDialogClose} color="inherit">
-            {t("Close")}
-          </Button>
-          <Button onClick={handleEditPrompt} variant="contained">
-            {t("Edit Prompt")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Edit Prompt Dialog */}
-      <Dialog
-        open={openEditDialog}
-        onClose={handleEditDialogClose}
-        maxWidth="lg"
-        fullWidth
-        aria-labelledby="edit-dialog-title"
-      >
-        <DialogTitle id="edit-dialog-title">
-          {t("Edit Prompt")}: {prompt?.name}
-        </DialogTitle>
+        <DialogTitle>{t("Prompt Details")}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Prompt Key")}
+                  margin="normal"
+                  value={user?.key || "-"}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: (
+                      <Tooltip title={t("Copy to clipboard")}>
+                        <IconButton
+                          onClick={() => copyToClipboard(user?.key)}
+                          edge="end"
+                        >
+                      
+                        </IconButton>
+                      </Tooltip>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Revenuecat API Key")}
+                  margin="normal"
+                  value={user?.revenuecat_api_key || "-"}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: (
+                      <Tooltip title={t("Copy to clipboard")}>
+                        <IconButton
+                    
+                          edge="end"
+                        >
+                       
+                        </IconButton>
+                      </Tooltip>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+            
             <TextField
               fullWidth
               label={t("Prompt Name")}
-              defaultValue={prompt?.name}
               margin="normal"
+              value={user?.name || "-"}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <Tooltip title={t("Copy to clipboard")}>
+                    <IconButton
+                      onClick={() => copyToClipboard(user?.name)}
+                      edge="end"
+                    >
+                     
+                    </IconButton>
+                  </Tooltip>
+                ),
+              }}
             />
-            <TextField
+
+            <Textarea
               fullWidth
-              label={t("Description")}
-              defaultValue={prompt?.description}
+              label={t("Prompt Content")}
               margin="normal"
               multiline
-              rows={2}
-            />
-            <TextField
-              fullWidth
-              label={t("Prompt Template")}
-              defaultValue={prompt?.prompt_text}
-              margin="normal"
-              multiline
+              value={user?.prompt || "-"}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <Tooltip title={t("Copy to clipboard")}>
+                    <IconButton
+                      onClick={() => copyToClipboard(user?.prompt)}
+                      edge="end"
+                    >
+                   
+                    </IconButton>
+                  </Tooltip>
+                ),
+              }}
               rows={8}
               sx={{ fontFamily: "monospace" }}
             />
-            {/* <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, mt: 2 }}>
-              <TextField
-                select
-                label={t("Category")}
-                defaultValue={prompt?.category}
-                SelectProps={{ native: true }}
-              >
-                {Object.values(PROMPT_CATEGORIES).map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </TextField>
-              <TextField
-                select
-                label={t("Status")}
-                defaultValue={prompt?.status}
-                SelectProps={{ native: true }}
-              >
-                {Object.values(PROMPT_STATUS).map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </TextField>
-              <TextField
-                select
-                label={t("Recommended Model")}
-                defaultValue={prompt?.recommended_model}
-                SelectProps={{ native: true }}
-              >
-                {Object.values(AI_MODELS_FOR_PROMPTS).map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
-                ))}
-              </TextField>
-            </Box> */}
+
+            {/* <TextField
+              fullWidth
+              label={t("Created At")}
+              margin="normal"
+              value={formatTimestamp(user?.createdAt)}
+              InputProps={{
+                readOnly: true,
+              }}
+            /> */}
+
+            <TextField
+              fullWidth
+              label={t("Last Updated")}
+              margin="normal"
+              value={formatTimestamp(user?.updatedAt)}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleEditDialogClose} color="inherit">
-            {t("Cancel")}
-          </Button>
-          <Button variant="contained" color="primary">
-            {t("Save Changes")}
+          <Button onClick={handleDetailDialogClose} color="primary">
+            {t("Close")}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Test Prompt Dialog */}
-      <Dialog
-        open={openTestDialog}
-        onClose={handleTestDialogClose}
-        maxWidth="md"
-        fullWidth
-        aria-labelledby="test-dialog-title"
-      >
-        <DialogTitle id="test-dialog-title">
-          {t("Test Prompt")}: {prompt?.name}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Paragraph variant="subtitle2" mb={2} fontWeight={600}>
-              {t("Fill in the variables to test this prompt")}:
-            </Paragraph>
-            {prompt?.variables?.map((variable, index) => (
-              <TextField
-                key={index}
-                fullWidth
-                label={variable}
-                placeholder={`Enter value for ${variable}`}
-                margin="normal"
-              />
-            ))}
-            <Box sx={{ mt: 3, mb: 2 }}>
-              <Paragraph variant="subtitle2" mb={1} fontWeight={600}>
-                {t("Generated Prompt")}:
-              </Paragraph>
-              <Box
-                sx={{
-                  backgroundColor: "#f5f5f5",
-                  padding: 2,
-                  borderRadius: 1,
-                  fontFamily: "monospace",
-                  whiteSpace: "pre-wrap",
-                  maxHeight: 200,
-                  overflow: "auto"
-                }}
-              >
-                {prompt?.prompt_text}
-              </Box>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleTestDialogClose} color="inherit">
-            {t("Close")}
-          </Button>
-          <Button variant="contained" color="primary">
-            {t("Run Test")}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }

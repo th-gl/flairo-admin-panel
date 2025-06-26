@@ -34,17 +34,24 @@ export default function UserTableHead(props) {
     },
 
     {
-      id: "accessLevel",
+      id: "devicemodel",
       numeric: false,
       disablePadding: false,
-      label: t("Access Level"),
+      label: t("Device Model"),
       sortable: true,
     },
     {
-      id: "planStatus",
+      id: "platform",
       numeric: false,
       disablePadding: false,
-      label: t("Plan Status"),
+      label: t("Platform"),
+      sortable: true,
+    },
+      {
+      id: "osVersion",
+      numeric: false,
+      disablePadding: false,
+      label: t("Os Version"),
       sortable: true,
     },
     {
@@ -82,7 +89,7 @@ export default function UserTableHead(props) {
       }}
     >
       <TableRow>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
@@ -90,7 +97,7 @@ export default function UserTableHead(props) {
             checked={rowCount > 0 && numSelected === rowCount}
             indeterminate={numSelected > 0 && numSelected < rowCount}
           />
-        </TableCell>
+        </TableCell> */}
 
         {headCells.map((headCell) => (
           <TableCell
