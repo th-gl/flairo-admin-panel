@@ -81,7 +81,7 @@ export default function ServiceTableRow(props) {
 
   const { t } = useTranslation();
   const { user, prompt, isSelected, handleSelectRow, handleDeleteService,fetchAIPrompts,handleEdit,
-    setOpenAddDialog
+    setOpenAddDialo
    } =
     props;
   console.log("userrr", user);
@@ -127,6 +127,7 @@ export default function ServiceTableRow(props) {
 
   // View details
   const handleViewDetails = () => {
+    console.log('AI prompt')
     fetchAIPrompts();
     setOpenDetailDialog(true);
     handleCloseOpenMenu();

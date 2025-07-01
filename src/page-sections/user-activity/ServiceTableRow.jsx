@@ -138,14 +138,14 @@ export default function ServiceTableRow(props) {
   return (
     <>
       <TableRow hover>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
             checked={isSelected}
             onClick={(event) => handleSelectRow(event, activity.id)}
           />
-        </TableCell>
+        </TableCell> */}
 
         {/* Device ID */}
         <TableCell padding="normal">
