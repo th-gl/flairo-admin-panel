@@ -31,7 +31,8 @@ export default function HeadingArea() {
           />
         </IconWrapper>
         <Paragraph fontWeight={"bold"} fontSize={19}>
-          {t("Recent AI Output")}
+      
+            {t("User Activity")}
         </Paragraph>
       </FlexBox>
       {/* <Button

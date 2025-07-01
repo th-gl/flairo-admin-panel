@@ -9,11 +9,18 @@ import Scrollbar from "@/components/scrollbar";
 import { TableDataNotFound, TableToolbar } from "@/components/table"; // CUSTOM PAGE SECTION COMPONENTS
 
 import useMuiTable, { getComparator, stableSort } from "@/hooks/useMuiTable"; // CUSTOM DUMMY DATA
-import { AI_OUTPUT_LIST, AI_OUTPUT_TYPES, OUTPUT_STATUS, AI_MODELS, QA_STATS } from "@/__fakeData__/aiOutputs";
+import {
+  AI_OUTPUT_LIST,
+  AI_OUTPUT_TYPES,
+  OUTPUT_STATUS,
+  AI_MODELS,
+  QA_STATS,
+} from "@/__fakeData__/aiOutputs";
 import Table from "@mui/material/Table";
 import ServiceTableHead from "../ServiceTableHead.jsx";
+import ServiceTableRow from "../ServiceTableRow.jsx"
 import TableBody from "@mui/material/TableBody";
-import ServiceTableRow from "../ServiceTableRow.jsx";
+
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import TableSkeleton from "@/components/loader/TableSkeleton.jsx";
@@ -31,9 +38,18 @@ import MenuItem from "@mui/material/MenuItem";
 import FlexBox from "@/components/flexbox/FlexBox";
 import Chip from "@mui/material/Chip";
 import { Paragraph } from "@/components/typography";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 
 export default function ServiceList() {
-    const { t} = useTranslation();
+  const { t } = useTranslation();
   const {
     page,
     rowsPerPage,
@@ -49,21 +65,51 @@ export default function ServiceList() {
   } = useMuiTable({ defaultOrderBy: "timestamp" });
 
   const [users, setUsers] = useState([]);
-  const [userFilter, setUserFilter] = useState({ 
-    role: "", 
-    search: "", 
+  const [userFilter, setUserFilter] = useState({
+    role: "",
+    search: "",
     outputType: "",
     status: "",
     aiModel: "",
-    qaStatus: ""
+    qaStatus: "",
   });
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [sortData ,setSortData]= useState({name:'',order:''})
+  const [sortData, setSortData] = useState({ name: "", order: "" });
 
   // AI output specific state
   const [aiOutputData, setAiOutputData] = useState(AI_OUTPUT_LIST);
   const [showMockData, setShowMockData] = useState(true);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true); // Optional: show loader during fetch
+      const querySnapshot = await getDocs(collection(DB, "users"));
+      const data = querySnapshot.docs.map((doc) => {
+        const userData = doc.data();
+        return {
+          id: doc.id,
+          ...userData,
+          lastLogin:
+            userData.lastLogin?.seconds != null
+              ? new Date(userData.lastLogin.seconds * 1000)
+              : null,
+        };
+      });
+      console.log("data", data);
+      setUsers(data);
+      setTotalRecords(data.length);
+    } catch (error) {
+      console.error("Error fetching users: ", error);
+      toast.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleChangeFilter = (key, value) => {
     setUserFilter((state) => ({
@@ -73,87 +119,60 @@ export default function ServiceList() {
   };
 
   // Enhanced filtering for AI outputs
-  const filteredUsers = stableSort(
-    showMockData ? aiOutputData : users, 
-    getComparator(order, orderBy)
-  ).filter((item) => {
-    let matches = true;
-    
-    if (userFilter.role && item.role) {
-      matches = matches && item.role.toLowerCase() === userFilter.role;
-    }
-    
-    if (userFilter.search) {
-      const searchTerm = userFilter.search.toLowerCase();
-      matches = matches && (
-        (item.user_name && item.user_name.toLowerCase().includes(searchTerm)) ||
-        (item.output_type && item.output_type.toLowerCase().includes(searchTerm)) ||
-        (item.ai_model && item.ai_model.toLowerCase().includes(searchTerm)) ||
-        (item.prompt && item.prompt.toLowerCase().includes(searchTerm)) ||
-        (item.output_text && item.output_text.toLowerCase().includes(searchTerm)) ||
-        (item.name && item.name.toLowerCase().includes(searchTerm))
-      );
-    }
-    
-    if (userFilter.outputType && item.output_type) {
-      matches = matches && item.output_type === userFilter.outputType;
-    }
-    
-    if (userFilter.status && item.status) {
-      matches = matches && item.status === userFilter.status;
-    }
-    
-    if (userFilter.aiModel && item.ai_model) {
-      matches = matches && item.ai_model === userFilter.aiModel;
-    }
-    
-    if (userFilter.qaStatus) {
-      if (userFilter.qaStatus === 'reviewed') {
-        matches = matches && item.qa_reviewed === true;
-      } else if (userFilter.qaStatus === 'pending') {
-        matches = matches && item.qa_reviewed === false;
-      } else if (userFilter.qaStatus === 'flagged') {
-        matches = matches && item.flagged_for_review === true;
-      }
-    }
-    
-    return matches;
-  });
+  // const filteredUsers = stableSort(
+  //   showMockData ? aiOutputData : users,
+  //   getComparator(order, orderBy)
+  // ).filter((item) => {
+  //   let matches = true;
 
-  const handleDeleteUser = (id) => {
-    if (showMockData) {
-      setAiOutputData((state) => state.filter((item) => item.id !== id));
-    } else {
-      setUsers((state) => state.filter((item) => item.id !== id));
-    }
-  };
+  //   if (userFilter.role && item.role) {
+  //     matches = matches && item.role.toLowerCase() === userFilter.role;
+  //   }
 
-  const handleAllUserDelete = () => {
-    if (showMockData) {
-      setAiOutputData((state) => state.filter((item) => !selected.includes(item.id)));
-    } else {
-      setUsers((state) => state.filter((item) => !selected.includes(item.id)));
-    }
-    handleSelectAllRows([])();
-  };
+  //   if (userFilter.search) {
+  //     const searchTerm = userFilter.search.toLowerCase();
+  //     matches = matches && (
+  //       (item.user_name && item.user_name.toLowerCase().includes(searchTerm)) ||
+  //       (item.output_type && item.output_type.toLowerCase().includes(searchTerm)) ||
+  //       (item.ai_model && item.ai_model.toLowerCase().includes(searchTerm)) ||
+  //       (item.prompt && item.prompt.toLowerCase().includes(searchTerm)) ||
+  //       (item.output_text && item.output_text.toLowerCase().includes(searchTerm)) ||
+  //       (item.name && item.name.toLowerCase().includes(searchTerm))
+  //     );
+  //   }
 
-  const fetchList = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getServices("", rowsPerPage, page,sortData.order,sortData.name);
-      // console.log(response);
-      if (response.success) {
-        setUsers(response.data);
-        // console.log(response.data, "response.data bookings");
-        setTotalRecords(response.totalRecords);
-      }
-    } catch (error) {
-      console.error(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [rowsPerPage, page,sortData.order,sortData.name]);
+  //   if (userFilter.outputType && item.output_type) {
+  //     matches = matches && item.output_type === userFilter.outputType;
+  //   }
+
+  //   if (userFilter.status && item.status) {
+  //     matches = matches && item.status === userFilter.status;
+  //   }
+
+  //   if (userFilter.aiModel && item.ai_model) {
+  //     matches = matches && item.ai_model === userFilter.aiModel;
+  //   }
+
+  //   if (userFilter.qaStatus) {
+  //     if (userFilter.qaStatus === 'reviewed') {
+  //       matches = matches && item.qa_reviewed === true;
+  //     } else if (userFilter.qaStatus === 'pending') {
+  //       matches = matches && item.qa_reviewed === false;
+  //     } else if (userFilter.qaStatus === 'flagged') {
+  //       matches = matches && item.flagged_for_review === true;
+  //     }
+  //   }
+
+  //   return matches;
+  // });
+
+  // const handleDeleteUser = (id) => {
+  //   if (showMockData) {
+  //     setAiOutputData((state) => state.filter((item) => item.id !== id));
+  //   } else {
+  //     setUsers((state) => state.filter((item) => item.id !== id));
+  //   }
+  // };
 
   const handleDeleteService = async (id) => {
     try {
@@ -162,13 +181,16 @@ export default function ServiceList() {
       if (response.success) {
         toast.success(t("AI output record deleted successfully"));
         if (!showMockData) {
-          await fetchList();
+          // await fetchList();
         } else {
           handleDeleteUser(id);
         }
-      }
-      else {
-        toast.error(t("This record cannot be deleted as it may be referenced by other data."));
+      } else {
+        toast.error(
+          t(
+            "This record cannot be deleted as it may be referenced by other data."
+          )
+        );
       }
     } catch (error) {
       console.error(error);
@@ -181,57 +203,59 @@ export default function ServiceList() {
     }
   };
 
-  const handleMultipleDeleteService = async () => {
-    try {
-      const response = await deleteMultipleService(selected);
-      // console.log({ response }, "delete Service");
-      if (response.success) {
-        // console.log({ response }, "inner delete Service");
+  //   const handleMultipleDeleteService = async () => {
+  //     try {
+  //       const response = await deleteMultipleService(selected);
+  //       // console.log({ response }, "delete Service");
+  //       if (response.success) {
+  //         // console.log({ response }, "inner delete Service");
 
-        toast.success(t("AI output records deleted successfully"));
-        if (!showMockData) {
-          fetchList();
-        } else {
-          handleAllUserDelete();
-        }
-        // console.log({ response }, "inner second delete Service");
-      }
-    } catch (error) {
-      console.error(error);
-      if (showMockData) {
-        handleAllUserDelete();
-        toast.success(t("AI output records deleted successfully"));
-      } else {
-        throw error;
-      }
-    }
-  };
- const handleSort=(sortOrder,sortField)=>{
-// console.log({sortOrder},{sortField})
-setSortData({name:sortField , order:sortOrder})
+  //         toast.success(t("AI output records deleted successfully"));
+  //         if (!showMockData) {
+  //           // fetchList();
+  //         } else {
+  //           handleAllUserDelete();
+  //         }
+  //         // console.log({ response }, "inner second delete Service");
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       if (showMockData) {
+  //         handleAllUserDelete();
+  //         toast.success(t("AI output records deleted successfully"));
+  //       } else {
+  //         throw error;
+  //       }
+  //     }
+  //   };
+  //  const handleSort=(sortOrder,sortField)=>{
+  // // console.log({sortOrder},{sortField})
+  // setSortData({name:sortField , order:sortOrder})
 
- }
+  //  }
 
+  //   useEffect(() => {
+  //     if (showMockData) {
+  //       setLoading(false);
+  //       setTotalRecords(aiOutputData.length);
+  //     } else {
+  //       // fetchList();
+  //     }
+  //   }, [ showMockData]);
 
-  useEffect(() => {
-    if (showMockData) {
-      setLoading(false);
-      setTotalRecords(aiOutputData.length);
-    } else {
-      fetchList();
-    }
-  }, [fetchList, showMockData]);
+  //   const toggleDataSource = () => {
+  //     setShowMockData(!showMockData);
+  //     setUserFilter({ role: "", search: "", outputType: "", status: "", aiModel: "", qaStatus: "" });
+  //   };
 
-  const toggleDataSource = () => {
-    setShowMockData(!showMockData);
-    setUserFilter({ role: "", search: "", outputType: "", status: "", aiModel: "", qaStatus: "" });
-  };
-
-  const displayedUsers = filteredUsers.slice(
+  //   const displayedUsers = filteredUsers.slice(
+  //     page * rowsPerPage,
+  //     page * rowsPerPage + rowsPerPage
+  //   );
+  const displayedUsers = stableSort(users, getComparator(order, orderBy)).slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
-
   return (
     <>
       {loading ? (
@@ -239,9 +263,9 @@ setSortData({name:sortField , order:sortOrder})
       ) : (
         <>
           <Card>
-            <Box p={2}>
+            <Box p={2} sx={{ marginTop: "20px" }}>
               <HeadingArea />
-              
+
               {/* Data Source Toggle */}
               {/* <FlexBox justifyContent="space-between" alignItems="center" mb={2}>
                 <FlexBox alignItems="center" gap={2}>
@@ -278,7 +302,7 @@ setSortData({name:sortField , order:sortOrder})
               </FlexBox> */}
 
               {/* Enhanced Search and Filter Area */}
-              <FlexBox gap={2} alignItems="center" mt={2} mb={2} flexWrap="wrap">
+              {/* <FlexBox gap={2} alignItems="center" mt={2} mb={2} flexWrap="wrap">
                 <Box flex={1} minWidth={250}>
                   <SearchArea
                     value={userFilter.search}
@@ -322,8 +346,8 @@ setSortData({name:sortField , order:sortOrder})
                         ))}
                       </Select>
                     </FormControl> */}
-                    
-                    <FormControl sx={{ minWidth: 120 }}>
+
+              {/* <FormControl sx={{ minWidth: 120 }}>
                       <InputLabel>{t("AI Model")}</InputLabel>
                       <Select
                         value={userFilter.aiModel}
@@ -337,9 +361,9 @@ setSortData({name:sortField , order:sortOrder})
                           </MenuItem>
                         ))}
                       </Select>
-                    </FormControl>
-                    
-                    {/* <FormControl sx={{ minWidth: 120 }}>
+                    </FormControl> */}
+
+              {/* <FormControl sx={{ minWidth: 120 }}>
                       <InputLabel>{t("QA Status")}</InputLabel>
                       <Select
                         value={userFilter.qaStatus}
@@ -352,9 +376,9 @@ setSortData({name:sortField , order:sortOrder})
                         <MenuItem value="flagged">{t("Flagged")}</MenuItem>
                       </Select>
                     </FormControl> */}
-                  </>
-                )}
-              </FlexBox>
+              {/* </>
+                )} */}
+              {/* </FlexBox> */}
             </Box>
 
             {selected.length > 0 && (
@@ -371,12 +395,12 @@ setSortData({name:sortField , order:sortOrder})
                     order={order}
                     orderBy={orderBy}
                     numSelected={selected.length}
-                    handleSort={handleSort}
-                    rowCount={filteredUsers.length}
+                    // handleSort={handleSort}
+                    // rowCount={filteredUsers.length}
                     onRequestSort={handleRequestSort}
-                    onSelectAllRows={handleSelectAllRows(
-                      filteredUsers.map((row) => row.id)
-                    )}
+                    // onSelectAllRows={handleSelectAllRows(
+                    //   filteredUsers.map((row) => row.id)
+                    // )}
                   />
 
                   <TableBody>
@@ -385,6 +409,7 @@ setSortData({name:sortField , order:sortOrder})
                         <ServiceTableRow
                           key={user.id}
                           user={user}
+                          fetchUsers={fetchUsers}
                           isSelected={isSelected(user.id)}
                           handleSelectRow={handleSelectRow}
                           handleDeleteService={handleDeleteService}
@@ -399,13 +424,13 @@ setSortData({name:sortField , order:sortOrder})
             </TableContainer>
             <Box padding={1}>
               <TablePagination
-                page={page}
                 component="div"
-                rowsPerPage={rowsPerPage}
-                count={filteredUsers.length}
+                count={users.length} // total number of items (use filteredUsers.length if filtering)
+                page={page}
                 onPageChange={handleChangePage}
-                rowsPerPageOptions={[5, 10, 25, 50]}
+                rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
                 labelRowsPerPage={t("Rows per page")}
               />
             </Box>

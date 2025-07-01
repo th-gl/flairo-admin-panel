@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import React from "react";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
@@ -16,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextField from "@mui/material/TextField";
+import TablePagination from "@mui/material/TablePagination";
 
 export default function AiOutputSimpleRows() {
   const { t } = useTranslation();
@@ -24,18 +26,20 @@ export default function AiOutputSimpleRows() {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [openViewDialog, setOpenViewDialog] = useState(false);
-const [viewData, setViewData] = useState(null);
+  const [viewData, setViewData] = useState(null);
+  const [page, setPage] = useState(0);
+const [rowsPerPage, setRowsPerPage] = useState(5);
 
-const handleViewDetails = (item) => {
-  setViewData(item);
-  setOpenViewDialog(true);
-  handleCloseOpenMenu();
-};
+  const handleViewDetails = (item) => {
+    setViewData(item);
+    setOpenViewDialog(true);
+    handleCloseOpenMenu();
+  };
 
-const handleCloseViewDialog = () => {
-  setOpenViewDialog(false);
-  setViewData(null);
-};
+  const handleCloseViewDialog = () => {
+    setOpenViewDialog(false);
+    setViewData(null);
+  };
 
   const fetchData = async () => {
     try {
@@ -64,7 +68,7 @@ const handleCloseViewDialog = () => {
       });
 
       setRows(data);
-      console.log('setRows',data);
+      console.log("setRows", data);
     } catch (err) {
       console.error("Failed to fetch data:", err);
     }
@@ -93,7 +97,7 @@ const handleCloseViewDialog = () => {
 
   const handleDeleteConfirm = async () => {
     if (!selectedUserId) return;
-    console.log('selectedUserId',selectedUserId);
+    console.log("selectedUserId", selectedUserId);
 
     try {
       await deleteDoc(doc(DB, "ai_outputs", selectedUserId));
@@ -116,17 +120,18 @@ const handleCloseViewDialog = () => {
       </TableRow>
     );
   }
+  const paginatedRows = rows.slice(
+  page * rowsPerPage,
+  page * rowsPerPage + rowsPerPage
+);
 
-
+  console.log("viewData" + viewData?.parsedResponse);
   return (
     <>
-      {rows.map((item) => (
+      {paginatedRows.map((item) => (
         <TableRow key={item.id}>
-          <TableCell padding="checkbox">
-            <Checkbox size="small" />
-          </TableCell>
           <TableCell>
-            <Paragraph>{item.uid}</Paragraph>
+            <Paragraph sx={{padding:"10px"}}>{item.uid}</Paragraph>
           </TableCell>
           <TableCell>
             <Paragraph>
@@ -146,12 +151,11 @@ const handleCloseViewDialog = () => {
                 title={t("Delete")}
                 handleClick={() => openDeleteConfirmDialog(item.id)}
               />
-                <TableMoreMenuItem
-                            Icon={VisibilityIcon}
-                            title={t("View Details")}
-                              handleClick={() => handleViewDetails(item)}
-                          
-                          />
+              <TableMoreMenuItem
+                Icon={VisibilityIcon}
+                title={t("View Details")}
+                handleClick={() => handleViewDetails(item)}
+              />
             </TableMoreMenu>
           </TableCell>
         </TableRow>
@@ -174,34 +178,44 @@ const handleCloseViewDialog = () => {
         </DialogActions>
       </Dialog>
       <Dialog open={openViewDialog} onClose={handleCloseViewDialog}>
-  <DialogTitle>{t("View AI Output Details")}</DialogTitle>
-  <DialogContent>
-    <TextField
-      fullWidth
-      margin="dense"
-      label={t("Title")}
-      value={viewData?.parsedResponse?.tone_analysis?.title || ""}
-      InputProps={{
-        readOnly: true,
-      }}
-    />
-    <TextField
-      fullWidth
-      margin="dense"
-      label={t("Text")}
-      multiline
-      rows={4}
-      value={viewData?.parsedResponse?.tone_analysis?.text || ""}
-      InputProps={{
-        readOnly: true,
-      }}
-    />
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleCloseViewDialog}>{t("Close")}</Button>
-  </DialogActions>
-</Dialog>
-
+        <DialogTitle>{t("View AI Output Details")}</DialogTitle>
+      <DialogContent>
+  {viewData?.parsedResponse &&
+    Object.entries(viewData.parsedResponse).map(([key, section]) => (
+      <Paragraph key={key} mb={3}>
+        <Paragraph sx={{ color: "gray" ,margin:"7px"}}>
+          {section.title || ""}
+        </Paragraph>
+        <Paragraph
+          sx={{
+            backgroundColor: "#f5f5f5",
+            padding: "10px",
+            borderRadius: "4px",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {section.text || ""}
+        </Paragraph>
+      </Paragraph>
+    ))}
+</DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewDialog}>{t("Close")}</Button>
+        </DialogActions>
+      </Dialog>
+      <TablePagination
+  component="div"
+  count={rows.length}
+  page={page}
+  onPageChange={(event, newPage) => setPage(newPage)}
+  rowsPerPage={rowsPerPage}
+  onRowsPerPageChange={(event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // reset to first page on page size change
+  }}
+  rowsPerPageOptions={[5, 10, 25, 50]}
+/>
     </>
   );
 }

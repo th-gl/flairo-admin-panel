@@ -17,12 +17,12 @@ import {
   PROMPT_STATS,
 } from "@/__fakeData__/aiPrompts";
 import Table from "@mui/material/Table";
-import ServiceTableHead from "../ServiceTableHead.jsx";
 import TableBody from "@mui/material/TableBody";
-import ServiceTableRow from "../ServiceTableRow.jsx";
+import ServiceTableHead from "../../ai-prompts/ServiceTableHead.jsx";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import TableSkeleton from "@/components/loader/TableSkeleton.jsx";
+import ServiceTableRow from "../../ai-prompts/ServiceTableRow.jsx";
 import {
   deleteService,
   getServices,
@@ -535,48 +535,36 @@ export default function ServiceList() {
             handleDeleteRows={handleMultipleDeleteService}
           />
         )}
-
-        <Scrollbar>
-          <TableContainer sx={{ minWidth: 900 }}>
-            <Table stickyHeader aria-label="prompts table">
+        <TableContainer>
+          <Scrollbar autoHide={false}>
+            <Table>
               <ServiceTableHead
                 order={order}
                 orderBy={orderBy}
                 numSelected={selected.length}
-                rowCount={filteredUsers.length}
                 onRequestSort={handleRequestSort}
-                onSelectAllRows={handleSelectAllRows(
-                  filteredUsers.map((n) => n.id)
-                )}
-                handleSort={handleSort}
               />
-
               <TableBody>
-                {loading ? (
-                  <TableSkeleton />
-                ) : users.length === 0 ? (
-                  <TableDataNotFound />
-                ) : (
+                {users.length > 0 ? (
                   users
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((user, index) => (
+                    .map((user) => (
                       <ServiceTableRow
-                        user={user}
                         key={user.id}
+                        user={user}
+                        fetchAIPrompts={fetchAIPrompts}
                         isSelected={isSelected(user.id)}
                         handleSelectRow={handleSelectRow}
-                        handleDeleteService={handleDeleteService}
-                        resetUsers={resetUsers}
-                        fetchAIPrompts={fetchAIPrompts}
                         handleEdit={handleEditPrompt}
-                        setOpenAddDialog={setOpenAddDialog}
                       />
                     ))
+                ) : (
+                  <TableDataNotFound />
                 )}
               </TableBody>
             </Table>
-          </TableContainer>
-        </Scrollbar>
+          </Scrollbar>
+        </TableContainer>
 
         <TablePagination
           page={page}

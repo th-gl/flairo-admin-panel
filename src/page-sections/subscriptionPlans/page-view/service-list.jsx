@@ -1,13 +1,14 @@
+import { useState, useEffect } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { DB } from "@/contexts/firebaseContext.jsx";
 import HeadingArea from "../HeadingArea.jsx";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
-import SearchArea from "../SearchArea.jsx";
-import { useCallback, useState, useEffect } from "react";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import FormControl from "@mui/material/FormControl";
@@ -17,7 +18,6 @@ import MenuItem from "@mui/material/MenuItem";
 import Scrollbar from "@/components/scrollbar";
 import { TableDataNotFound, TableToolbar } from "@/components/table";
 import useMuiTable, { getComparator, stableSort } from "@/hooks/useMuiTable";
-import { SUBSCRIPTION_PLANS_LIST, PLAN_STATS, PLAN_STATUS, PLAN_TYPES } from "@/__fakeData__/subscriptionPlans";
 import Table from "@mui/material/Table";
 import ServiceTableHead from "../ServiceTableHead.jsx";
 import TableBody from "@mui/material/TableBody";
@@ -30,10 +30,34 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import PeopleIcon from "@mui/icons-material/People";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import AssessmentIcon from "@mui/icons-material/Assessment";
+import { FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+
+// Validation Schema
+const subscriptionSchema = Yup.object().shape({
+  name: Yup.string()
+    .required("Plan name is required")
+    .max(50, "Plan name must be at most 50 characters"),
+  type: Yup.string().required("Plan type is required"),
+  aiprompts: Yup.number()
+    .required("AI prompts count is required")
+    .min(0, "Must be at least 0")
+    .integer("Must be a whole number"),
+  features: Yup.object().shape({
+    toneAnalysis: Yup.boolean(),
+    interestRate: Yup.boolean(),
+    mixedSignals: Yup.boolean(),
+    unspokenTruth: Yup.boolean(),
+    aiSuggestedNextMove: Yup.boolean(),
+  }),
+});
 
 export default function ServiceList() {
   const { t } = useTranslation();
@@ -51,152 +75,124 @@ export default function ServiceList() {
     handleChangePage,
   } = useMuiTable({ defaultOrderBy: "name" });
 
-  const [plans, setPlans] = useState(SUBSCRIPTION_PLANS_LIST);
-  const [planFilter, setPlanFilter] = useState({ 
-    type: "", 
-    status: "", 
-    search: "" 
-  });
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [totalRecords, setTotalRecords] = useState(SUBSCRIPTION_PLANS_LIST.length);
-  const [sortData, setSortData] = useState({ name: '', order: '' });
+    const [currentPlan, setCurrentPlan] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [newPlan, setNewPlan] = useState({
-    name: '',
-    type: PLAN_TYPES.BASIC,
-    description: '',
-    price: 0,
-    weeklyDecodeLimit: 25,
-    status: PLAN_STATUS.DRAFT
+  const PLANS = ["Basic", "Standard", "Popular"];
+
+  const featureLabels = {
+    toneAnalysis: "Tone Analysis",
+    interestRate: "Interest Rate",
+    mixedSignals: "Mixed Signals",
+    unspokenTruth: "Unspoken Truth",
+    aiSuggestedNextMove: "AI Suggested Next Move",
+  };
+
+  // Formik initialization
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      type: "Basic",
+      aiprompts: 0,
+      features: {
+        toneAnalysis: false,
+        interestRate: false,
+        mixedSignals: false,
+        unspokenTruth: false,
+        aiSuggestedNextMove: false,
+      },
+    },
+    validationSchema: subscriptionSchema,
+    onSubmit: async (values, { resetForm, setSubmitting }) => {
+      try {
+        setSubmitting(true);
+        
+        if (!values.name || !values.type || values.aiprompts === null) {
+          toast.error("Please fill all required fields");
+          return;
+        }
+
+        const currentTime = new Date();
+        const subscriptionData = {
+          name: values.name,
+          type: values.type,
+          aiprompts: Number(values.aiprompts),
+          features: values.features,
+          updatedAt: currentTime,
+        };
+
+        if (isEditing && currentPlan) {
+          // Update existing document
+          await updateDoc(doc(DB, "subscription", currentPlan.id), {
+            ...subscriptionData,
+            createdAt: currentPlan.createdAt, // Preserve original creation time
+          });
+          toast.success("Subscription plan updated successfully");
+        } else {
+          // Create new document
+          const docRef = await addDoc(collection(DB, "subscription"), {
+            ...subscriptionData,
+            createdAt: currentTime,
+          });
+          subscriptionData.id = docRef.id;
+          toast.success("Subscription plan created successfully");
+        }
+
+        await fetchPlans();
+        setOpenCreateDialog(false);
+        resetForm();
+        setIsEditing(false);
+        setCurrentPlan(null);
+      } catch (error) {
+        console.error("Error saving subscription:", error);
+        toast.error(`Failed to ${isEditing ? 'update' : 'create'} subscription plan`);
+      } finally {
+        setSubmitting(false);
+      }
+    },
   });
 
-  const handleChangeFilter = (key, value) => {
-    setPlanFilter((state) => ({
-      ...state,
-      [key]: value,
-    }));
-  };
-
-  const filteredPlans = stableSort(plans, getComparator(order, orderBy)).filter(
-    (plan) => {
-      let matches = true;
-      
-      if (planFilter.type && planFilter.type !== '') {
-        matches = matches && plan.type.toLowerCase() === planFilter.type.toLowerCase();
-      }
-      
-      if (planFilter.status && planFilter.status !== '') {
-        matches = matches && plan.status.toLowerCase() === planFilter.status.toLowerCase();
-      }
-      
-      if (planFilter.search && planFilter.search !== '') {
-        matches = matches && (
-          plan.name.toLowerCase().includes(planFilter.search.toLowerCase()) ||
-          plan.description.toLowerCase().includes(planFilter.search.toLowerCase())
-        );
-      }
-      
-      return matches;
-    }
-  );
-
-  const handleDeletePlan = (id) => {
-    setPlans((state) => state.filter((item) => item.id !== id));
-    toast.success(t("Subscription plan deleted successfully"));
-  };
-
-  const handleUpdatePlan = (updatedPlan) => {
-    setPlans((state) => {
-      const existingIndex = state.findIndex(p => p.id === updatedPlan.id);
-      if (existingIndex >= 0) {
-        // Update existing plan
-        const newState = [...state];
-        newState[existingIndex] = updatedPlan;
-        toast.success(t("Subscription plan updated successfully"));
-        return newState;
-      } else {
-        // Add new plan
-        toast.success(t("Subscription plan created successfully"));
-        return [...state, updatedPlan];
-      }
+    const handleEditPlan = (plan) => {
+    setCurrentPlan(plan);
+    setIsEditing(true);
+    formik.setValues({
+      name: plan.name,
+      type: plan.type,
+      aiprompts: plan.aiprompts,
+      features: plan.features || {
+        toneAnalysis: false,
+        interestRate: false,
+        mixedSignals: false,
+        unspokenTruth: false,
+        aiSuggestedNextMove: false,
+      },
     });
+    setOpenCreateDialog(true);
   };
-
-  const handleAllPlanDelete = () => {
-    setPlans((state) => state.filter((item) => !selected.includes(item.id)));
-    handleSelectAllRows([])();
-    toast.success(t("Selected subscription plans deleted successfully"));
-  };
-
-  const handleSort = (sortOrder, sortField) => {
-    setSortData({ name: sortField, order: sortOrder });
-  };
-
-  const handleCreatePlan = () => {
-    const newPlanData = {
-      ...newPlan,
-      id: `plan_new_${Date.now()}`,
-      slug: newPlan.name.toLowerCase().replace(/\s+/g, '-'),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      author: 'Admin User',
-      lastModifiedBy: 'Admin User',
-      version: '1.0',
-      isCurrentVersion: true,
-      subscriberCount: 0,
-      conversionRate: '0.00',
-      churnRate: '0.00',
-      avgLifetimeValue: '0.00',
-      viewCount: 0,
-      clickCount: 0,
-      signupCount: 0,
-      features: [],
-      buttonText: 'Get Started',
-      buttonSubtext: '',
-      popularBadge: false,
-      customizable: {
-        weeklyDecodeLimit: true,
-        description: true,
-        buttonText: true,
-        features: true,
-        price: true
+ const fetchPlans = async () => {
+      try {
+        setLoading(true);
+        const querySnapshot = await getDocs(collection(DB, "subscription"));
+        const plansData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setPlans(plansData);
+        console.log('plansData',plansData)
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+        toast.error("Failed to load subscription plans");
+      } finally {
+        setLoading(false);
       }
     };
-    
-    handleUpdatePlan(newPlanData);
-    setOpenCreateDialog(false);
-    setNewPlan({
-      name: '',
-      type: PLAN_TYPES.BASIC,
-      description: '',
-      price: 0,
-      weeklyDecodeLimit: 25,
-      status: PLAN_STATUS.DRAFT
-    });
-  };
+  // Fetch existing plans from Firebase
+  useEffect(() => {
+   
 
-  const StatCard = ({ title, value, icon, color = "primary", subtitle }) => (
-    <Card sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-      <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-        <Box sx={{ color: `${color}.main`, fontSize: '2rem' }}>
-          {icon}
-        </Box>
-        <div>
-          <Typography variant="h4" color={`${color}.main`} fontWeight="bold">
-            {value}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {title}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.disabled">
-              {subtitle}
-            </Typography>
-          )}
-        </div>
-      </Box>
-    </Card>
-  );
+    fetchPlans();
+  }, []);
+
+  const filteredPlans = stableSort(plans, getComparator(order, orderBy));
 
   return (
     <>
@@ -204,52 +200,17 @@ export default function ServiceList() {
         <TableSkeleton />
       ) : (
         <>
-          {/* Statistics Overview */}
-          {/* <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Total Plans"
-                value={PLAN_STATS.totalPlans}
-                icon={<AssessmentIcon />}
-                color="primary"
-                subtitle={`${PLAN_STATS.activePlans} active`}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Total Subscribers"
-                value={PLAN_STATS.totalSubscribers.toLocaleString()}
-                icon={<PeopleIcon />}
-                color="success"
-                subtitle="across all plans"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Monthly Revenue"
-                value={`$${PLAN_STATS.totalRevenue}`}
-                icon={<AttachMoneyIcon />}
-                color="warning"
-                subtitle="recurring revenue"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Avg Conversion"
-                value={`${PLAN_STATS.avgConversionRate}%`}
-                icon={<TrendingUpIcon />}
-                color="info"
-                subtitle={`${PLAN_STATS.avgChurnRate}% churn rate`}
-              />
-            </Grid>
-          </Grid> */}
-
           <Card>
             <Box p={2}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <HeadingArea 
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <HeadingArea
                   title="Subscription Plans Management"
-                  subtitle="Create and manage subscription plans, decode limits, and pricing"
+                  subtitle="Create and manage subscription plans"
                 />
                 <Button
                   variant="contained"
@@ -259,80 +220,14 @@ export default function ServiceList() {
                   Create New Plan
                 </Button>
               </Box>
-
-              {/* Filters */}
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} md={4}>
-                  <SearchArea
-                    value={planFilter.search}
-                    onChange={(e) => handleChangeFilter("search", e.target.value)}
-                    placeholder="Search plans..."
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Filter by Type</InputLabel>
-                    <Select
-                      value={planFilter.type}
-                      label="Filter by Type"
-                      onChange={(e) => handleChangeFilter("type", e.target.value)}
-                    >
-                      <MenuItem value="">All Types</MenuItem>
-                      {Object.values(PLAN_TYPES).map(type => (
-                        <MenuItem key={type} value={type}>{type}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Filter by Status</InputLabel>
-                    <Select
-                      value={planFilter.status}
-                      label="Filter by Status"
-                      onChange={(e) => handleChangeFilter("status", e.target.value)}
-                    >
-                      <MenuItem value="">All Statuses</MenuItem>
-                      {Object.values(PLAN_STATUS).map(status => (
-                        <MenuItem key={status} value={status}>{status}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={2}>
-                  <Box display="flex" alignItems="center" height="100%">
-                    <Typography variant="body2" color="text.secondary">
-                      {filteredPlans.length} of {plans.length} plans
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-
-              {/* Most Popular Plan */}
-              {/* {PLAN_STATS.mostPopularPlan && (
-                <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    🏆 Most Popular Plan
-                  </Typography>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <Chip 
-                      label={PLAN_STATS.mostPopularPlan.name}
-                      color="primary"
-                      variant="filled"
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {PLAN_STATS.mostPopularPlan.subscriberCount.toLocaleString()} subscribers • 
-                      {PLAN_STATS.mostPopularPlan.conversionRate}% conversion rate
-                    </Typography>
-                  </Box>
-                </Box>
-              )} */}
             </Box>
 
             {selected.length > 0 && (
               <TableToolbar
                 selected={selected.length}
-                handleDeleteRows={handleAllPlanDelete}
+                handleDeleteRows={() => {
+                  // Handle bulk delete if needed
+                }}
               />
             )}
 
@@ -343,7 +238,6 @@ export default function ServiceList() {
                     order={order}
                     orderBy={orderBy}
                     numSelected={selected.length}
-                    handleSort={handleSort}
                     rowCount={filteredPlans.length}
                     onRequestSort={handleRequestSort}
                     onSelectAllRows={handleSelectAllRows(
@@ -357,21 +251,21 @@ export default function ServiceList() {
                         page * rowsPerPage,
                         page * rowsPerPage + rowsPerPage
                       )
-                      .map((plan) => (
+                      ?.map((plan) => (
                         <ServiceTableRow
                           key={plan.id}
+                          fetchPlans={fetchPlans}
                           plan={plan}
                           isSelected={isSelected(plan.id)}
                           handleSelectRow={handleSelectRow}
-                          handleDeletePlan={handleDeletePlan}
-                          handleUpdatePlan={handleUpdatePlan}
+                           handleEditPlan={handleEditPlan}
                         />
                       ))}
 
                     {filteredPlans.length === 0 && (
-                      <TableDataNotFound 
+                      <TableDataNotFound
                         title="No subscription plans found"
-                        subtitle="Try adjusting your search or filter criteria"
+                        subtitle="Try creating a new plan"
                       />
                     )}
                   </TableBody>
@@ -391,97 +285,122 @@ export default function ServiceList() {
           </Card>
 
           {/* Create New Plan Dialog */}
-          <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Create New Subscription Plan</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Plan Name"
-                    value={newPlan.name}
-                    onChange={(e) => setNewPlan(prev => ({ ...prev, name: e.target.value }))}
-                    margin="normal"
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Plan Type</InputLabel>
-                    <Select
-                      value={newPlan.type}
-                      label="Plan Type"
-                      onChange={(e) => setNewPlan(prev => ({ ...prev, type: e.target.value }))}
-                    >
-                      {Object.values(PLAN_TYPES).map(type => (
-                        <MenuItem key={type} value={type}>{type}</MenuItem>
+          <Dialog
+            open={openCreateDialog}
+            onClose={() => {
+              setOpenCreateDialog(false);
+              formik.resetForm();
+            }}
+            maxWidth="sm"
+            fullWidth
+          >
+            <form onSubmit={formik.handleSubmit}>
+
+              <DialogTitle>
+                {isEditing ? "Edit Subscription Plan" : "Create New Subscription Plan"}
+              </DialogTitle>
+              <DialogContent>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="name"
+                      label="Plan Name"
+                      value={formik.values.name}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.name && Boolean(formik.errors.name)}
+                      helperText={formik.touched.name && formik.errors.name}
+                      margin="normal"
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth margin="normal" error={formik.touched.type && Boolean(formik.errors.type)}>
+                      <InputLabel>Plan Type</InputLabel>
+                      <Select
+                        name="type"
+                        value={formik.values.type}
+                        label="Plan Type"
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                      >
+                        {PLANS.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      name="aiprompts"
+                      label="AI Prompts"
+                      value={formik.values.aiprompts}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.aiprompts && Boolean(formik.errors.aiprompts)}
+                      helperText={formik.touched.aiprompts && formik.errors.aiprompts}
+                      margin="normal"
+                      required
+                      inputProps={{ min: 0 }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+                      Features
+                    </Typography>
+                    <FormGroup>
+                      {Object.entries(featureLabels).map(([key, label]) => (
+                        <FormControlLabel
+                          key={key}
+                          control={
+                            <Checkbox
+                              name={`features.${key}`}
+                              checked={formik.values.features[key]}
+                              onChange={formik.handleChange}
+                              onBlur={formik.handleBlur}
+                            />
+                          }
+                          label={label}
+                        />
                       ))}
-                    </Select>
-                  </FormControl>
+                    </FormGroup>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={newPlan.status}
-                      label="Status"
-                      onChange={(e) => setNewPlan(prev => ({ ...prev, status: e.target.value }))}
-                    >
-                      {Object.values(PLAN_STATUS).map(status => (
-                        <MenuItem key={status} value={status}>{status}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Description"
-                    value={newPlan.description}
-                    onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-                    margin="normal"
-                    multiline
-                    rows={3}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Price (USD)"
-                    type="number"
-                    value={newPlan.price}
-                    onChange={(e) => setNewPlan(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
-                    margin="normal"
-                    inputProps={{ min: 0, step: 0.01 }}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Weekly Decode Limit"
-                    type="number"
-                    value={newPlan.weeklyDecodeLimit}
-                    onChange={(e) => setNewPlan(prev => ({ ...prev, weeklyDecodeLimit: parseInt(e.target.value) }))}
-                    margin="normal"
-                    helperText="Enter -1 for unlimited"
-                    inputProps={{ min: -1 }}
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={handleCreatePlan} 
-                variant="contained"
-                disabled={!newPlan.name.trim()}
-              >
-                Create Plan
-              </Button>
-            </DialogActions>
+              </DialogContent>
+              <DialogActions>
+                     <Button
+                  onClick={() => {
+                    setOpenCreateDialog(false);
+                    formik.resetForm();
+                    setIsEditing(false);
+                    setCurrentPlan(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!formik.isValid || formik.isSubmitting}
+                >
+                  {formik.isSubmitting 
+                    ? isEditing 
+                      ? "Updating..." 
+                      : "Creating..." 
+                    : isEditing 
+                      ? "Update Plan" 
+                      : "Create Plan"}
+                </Button>
+              </DialogActions>
+            </form>
           </Dialog>
         </>
       )}
     </>
   );
-} 
+}
