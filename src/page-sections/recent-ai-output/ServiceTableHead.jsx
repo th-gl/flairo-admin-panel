@@ -106,6 +106,7 @@ export default function ServiceTableHead(props) {
       sortable: true,
     },
 
+
     {
       id: "devicemodel",
       numeric: false,

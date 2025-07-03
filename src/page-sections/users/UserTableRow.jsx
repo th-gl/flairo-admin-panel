@@ -122,10 +122,11 @@ export default function UserTableRow(props) {
     handleDeleteUser,
     handleUpdateUser,
     fetchUsers,
+    handleOpenEditUser,
   } = props;
   console.log(user);
-  console.log(props , "props")
-  
+  console.log(props, "props");
+
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -241,6 +242,21 @@ export default function UserTableRow(props) {
             </div>
           </FlexBox>
         </TableCell>
+        <TableCell padding="normal">
+          <div>
+            <Paragraph fontWeight={500} color="text.primary">
+              {user?.email || "-"}
+            </Paragraph>
+          </div>
+        </TableCell>
+
+        <TableCell padding="normal">
+          <div>
+            <Paragraph fontWeight={500} color="text.primary">
+           {user?.freeAnalysisUsed !== undefined ? Math.abs(user.freeAnalysisUsed) : "-"}
+            </Paragraph>
+          </div>
+        </TableCell>
 
         <TableCell padding="normal">
           <Chip
@@ -316,15 +332,14 @@ export default function UserTableRow(props) {
               title={t("Manage Access")}
               handleClick={() => handleAccessLevelManagement(user.id)}
             /> */}
-
-            {/* <TableMoreMenuItem
+            <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit User")}
               handleClick={() => {
                 handleCloseOpenMenu();
-                navigate(`/user-edit/${user.id}`);
+                props.handleOpenEditUser(user); // Pass selected user
               }}
-            /> */}
+            />
 
             <TableMoreMenuItem
               Icon={DeleteOutline}
