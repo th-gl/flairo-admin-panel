@@ -28,12 +28,13 @@ export default function MultiLevelMenu({ sidebarCompact }) {
       path: "/",
     },
     {
-      name: t("User Activity"),
+      name: t("Recent AI Output"),
       icon: duotone.PersonCircleCheck,
       path: "/user-activity-list",
     },
     {
-      name: t("Recent AI Output"),
+     
+      name: t("User Activity"),
       icon: duotone.CommentsQuestionCheck,
       path: "/recent-ai-output-list",
     },
@@ -42,11 +43,11 @@ export default function MultiLevelMenu({ sidebarCompact }) {
       icon: duotone.Edit,
       path: "/ai-prompts-list",
     },
-    {
-      name: t("Subscription Plans"),
-      icon: duotone.Pricing,
-      path: "/subscription-plans-list",
-    }
+    // {
+    //   name: t("Subscription Plans"),
+    //   icon: duotone.Pricing,
+    //   path: "/subscription-plans-list",
+    // }
   ];
 
   const { user } = useAuth();

@@ -31,11 +31,37 @@ import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import { PLAN_STATUS, BILLING_CYCLES, DECODE_LIMIT_PRESETS, BUTTON_TEXT_TEMPLATES, FEATURE_TEMPLATES } from "@/__fakeData__/subscriptionPlans";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import { toast } from "react-toastify";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import {
+  PLAN_STATUS,
+  BILLING_CYCLES,
+  DECODE_LIMIT_PRESETS,
+  BUTTON_TEXT_TEMPLATES,
+  FEATURE_TEMPLATES,
+} from "@/__fakeData__/subscriptionPlans";
 
 export default function ServiceTableRow(props) {
+  console.log("props", props);
   const { t } = useTranslation();
-  const { plan, isSelected, handleSelectRow, handleDeletePlan, handleUpdatePlan } = props;
+  const {
+    plan,
+    isSelected,
+    handleSelectRow,
+    handleDeletePlan,
+    handleUpdatePlan,
+    fetchPlans,
+    handleEditPlan,
+  } = props;
+  console.log("plan", plan);
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
 
@@ -46,20 +72,20 @@ export default function ServiceTableRow(props) {
   const [openDecodeDialog, setOpenDecodeDialog] = useState(false);
   const [openAnalyticsDialog, setOpenAnalyticsDialog] = useState(false);
 
-  // Form states for editing
-  const [editForm, setEditForm] = useState({
-    name: plan?.name || '',
-    description: plan?.description || '',
-    longDescription: plan?.longDescription || '',
-    price: plan?.price || 0,
-    weeklyDecodeLimit: plan?.weeklyDecodeLimit || 0,
-    monthlyDecodeLimit: plan?.monthlyDecodeLimit || 0,
-    buttonText: plan?.buttonText || '',
-    buttonSubtext: plan?.buttonSubtext || '',
-    status: plan?.status || PLAN_STATUS.DRAFT,
-    billingCycle: plan?.billingCycle || BILLING_CYCLES.MONTHLY,
-    features: plan?.features || []
-  });
+  // // Form states for editing
+  // const [editForm, setEditForm] = useState({
+  //   name: plan?.name || '',
+  //   description: plan?.description || '',
+  //   longDescription: plan?.longDescription || '',
+  //   price: plan?.price || 0,
+  //   weeklyDecodeLimit: plan?.weeklyDecodeLimit || 0,
+  //   monthlyDecodeLimit: plan?.monthlyDecodeLimit || 0,
+  //   buttonText: plan?.buttonText || '',
+  //   buttonSubtext: plan?.buttonSubtext || '',
+  //   status: plan?.status || PLAN_STATUS.DRAFT,
+  //   billingCycle: plan?.billingCycle || BILLING_CYCLES.MONTHLY,
+  //   features: plan?.features || []
+  // });
 
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
@@ -77,130 +103,143 @@ export default function ServiceTableRow(props) {
     setOpenDeleteDialog(false);
   };
 
-  const handleDeleteConfirm = () => {
-    handleDeletePlan(plan?.id);
-    setOpenDeleteDialog(false);
-  };
-
-  // View handlers
-  const handleViewDetails = () => {
-    setOpenViewDialog(true);
+  const handleEditClick = () => {
+    handleEditPlan(plan);
     handleCloseOpenMenu();
   };
 
-  // Edit handlers
-  const handleEditPlan = () => {
-    setEditForm({
-      name: plan?.name || '',
-      description: plan?.description || '',
-      longDescription: plan?.longDescription || '',
-      price: plan?.price || 0,
-      weeklyDecodeLimit: plan?.weeklyDecodeLimit || 0,
-      monthlyDecodeLimit: plan?.monthlyDecodeLimit || 0,
-      buttonText: plan?.buttonText || '',
-      buttonSubtext: plan?.buttonSubtext || '',
-      status: plan?.status || PLAN_STATUS.DRAFT,
-      billingCycle: plan?.billingCycle || BILLING_CYCLES.MONTHLY,
-      features: plan?.features || []
-    });
-    setOpenEditDialog(true);
-    handleCloseOpenMenu();
+  const handleDeleteConfirm = async (userId) => {
+    try {
+      const userRef = doc(DB, "subscription", userId); // 'react' is the collection name
+      await deleteDoc(userRef);
+      toast.success(t("Plan deleted successfully"));
+      setOpenDeleteDialog(false);
+      await fetchPlans();
+    } catch (error) {
+      console.error("Error deleting Plan: ", error);
+      throw error;
+    }
   };
 
-  const handleFormChange = (field, value) => {
-    setEditForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  // // View handlers
+  // const handleViewDetails = () => {
+  //   setOpenViewDialog(true);
+  //   handleCloseOpenMenu();
+  // };
 
-  const handleSaveChanges = () => {
-    const updatedPlan = {
-      ...plan,
-      ...editForm,
-      updatedAt: new Date().toISOString(),
-      lastModifiedBy: 'Admin User'
-    };
-    handleUpdatePlan(updatedPlan);
-    setOpenEditDialog(false);
-  };
+  // // Edit handlers
+  // const handleEditPlan = () => {
+  //   setEditForm({
+  //     name: plan?.name || '',
+  //     description: plan?.description || '',
+  //     longDescription: plan?.longDescription || '',
+  //     price: plan?.price || 0,
+  //     weeklyDecodeLimit: plan?.weeklyDecodeLimit || 0,
+  //     monthlyDecodeLimit: plan?.monthlyDecodeLimit || 0,
+  //     buttonText: plan?.buttonText || '',
+  //     buttonSubtext: plan?.buttonSubtext || '',
+  //     status: plan?.status || PLAN_STATUS.DRAFT,
+  //     billingCycle: plan?.billingCycle || BILLING_CYCLES.MONTHLY,
+  //     features: plan?.features || []
+  //   });
+  //   setOpenEditDialog(true);
+  //   handleCloseOpenMenu();
+  // };
 
-  // Decode limit handlers
-  const handleManageDecodes = () => {
-    setOpenDecodeDialog(true);
-    handleCloseOpenMenu();
-  };
+  // const handleFormChange = (field, value) => {
+  //   setEditForm(prev => ({
+  //     ...prev,
+  //     [field]: value
+  //   }));
+  // };
 
-  const handlePresetSelect = (preset) => {
-    setEditForm(prev => ({
-      ...prev,
-      weeklyDecodeLimit: preset.weekly,
-      monthlyDecodeLimit: preset.monthly,
-      dailyDecodeLimit: preset.daily
-    }));
-  };
+  // const handleSaveChanges = () => {
+  //   const updatedPlan = {
+  //     ...plan,
+  //     ...editForm,
+  //     updatedAt: new Date().toISOString(),
+  //     lastModifiedBy: 'Admin User'
+  //   };
+  //   handleUpdatePlan(updatedPlan);
+  //   setOpenEditDialog(false);
+  // };
 
-  // Analytics handlers
-  const handleViewAnalytics = () => {
-    setOpenAnalyticsDialog(true);
-    handleCloseOpenMenu();
-  };
+  // // Decode limit handlers
+  // const handleManageDecodes = () => {
+  //   setOpenDecodeDialog(true);
+  //   handleCloseOpenMenu();
+  // };
 
-  // Duplicate handler
-  const handleDuplicatePlan = () => {
-    const duplicatedPlan = {
-      ...plan,
-      id: `${plan.id}_copy_${Date.now()}`,
-      name: `${plan.name} (Copy)`,
-      status: PLAN_STATUS.DRAFT,
-      subscriberCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    handleUpdatePlan(duplicatedPlan);
-    handleCloseOpenMenu();
-  };
+  // const handlePresetSelect = (preset) => {
+  //   setEditForm(prev => ({
+  //     ...prev,
+  //     weeklyDecodeLimit: preset.weekly,
+  //     monthlyDecodeLimit: preset.monthly,
+  //     dailyDecodeLimit: preset.daily
+  //   }));
+  // };
 
-  // Helper functions
-  const getStatusColor = (status) => {
-    const colors = {
-      [PLAN_STATUS.ACTIVE]: 'success',
-      [PLAN_STATUS.INACTIVE]: 'default',
-      [PLAN_STATUS.DRAFT]: 'warning',
-      [PLAN_STATUS.ARCHIVED]: 'error',
-      [PLAN_STATUS.COMING_SOON]: 'info'
-    };
-    return colors[status] || 'default';
-  };
+  // // Analytics handlers
+  // const handleViewAnalytics = () => {
+  //   setOpenAnalyticsDialog(true);
+  //   handleCloseOpenMenu();
+  // };
 
-  const formatPrice = (price) => {
-    return price === 0 ? 'Free' : `$${price.toFixed(2)}`;
-  };
+  // // Duplicate handler
+  // const handleDuplicatePlan = () => {
+  //   const duplicatedPlan = {
+  //     ...plan,
+  //     id: `${plan.id}_copy_${Date.now()}`,
+  //     name: `${plan.name} (Copy)`,
+  //     status: PLAN_STATUS.DRAFT,
+  //     subscriberCount: 0,
+  //     createdAt: new Date().toISOString(),
+  //     updatedAt: new Date().toISOString()
+  //   };
+  //   handleUpdatePlan(duplicatedPlan);
+  //   handleCloseOpenMenu();
+  // };
 
-  const formatDecodeLimit = (limit) => {
-    return limit === -1 ? 'Unlimited' : limit.toString();
-  };
+  // // Helper functions
+  // const getStatusColor = (status) => {
+  //   const colors = {
+  //     [PLAN_STATUS.ACTIVE]: 'success',
+  //     [PLAN_STATUS.INACTIVE]: 'default',
+  //     [PLAN_STATUS.DRAFT]: 'warning',
+  //     [PLAN_STATUS.ARCHIVED]: 'error',
+  //     [PLAN_STATUS.COMING_SOON]: 'info'
+  //   };
+  //   return colors[status] || 'default';
+  // };
+
+  // const formatPrice = (price) => {
+  //   return price === 0 ? 'Free' : `$${price?.toFixed(2)}`;
+  // };
+
+  // const formatDecodeLimit = (limit) => {
+  //   return limit === -1 ? 'Unlimited' : limit?.toString();
+  // };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString)?.toLocaleDateString();
   };
 
   return (
     <>
       <TableRow hover>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
             checked={isSelected}
             onClick={(event) => handleSelectRow(event, plan.id)}
           />
-        </TableCell>
+        </TableCell> */}
 
         {/* Plan Name */}
         <TableCell padding="normal">
           <FlexBox alignItems="center" gap={2}>
-            <Avatar
+            {/* <Avatar
               sx={{ 
                 backgroundColor: plan.color,
                 width: 40,
@@ -210,86 +249,93 @@ export default function ServiceTableRow(props) {
               variant="rounded"
             >
               {plan.icon}
-            </Avatar>
+            </Avatar> */}
             <div>
               <Paragraph fontWeight={500} color="text.primary">
                 {plan.name}
-                {plan.popularBadge && (
-                  <Chip 
-                    label={plan.badgeText}
-                    size="small"
-                    color="primary"
-                    sx={{ ml: 1, fontSize: '0.6rem', height: 20 }}
-                  />
-                )}
               </Paragraph>
-              <Small color="text.secondary">v{plan.version}</Small>
             </div>
           </FlexBox>
         </TableCell>
 
         {/* Type */}
         <TableCell padding="normal">
-          <Chip 
+          <Chip
             label={plan.type}
             size="small"
             variant="outlined"
-            sx={{ color: plan.color, borderColor: plan.color }}
+            sx={{
+              color:
+                plan.type === "Basic"
+                  ? "red"
+                  : plan.type === "Standard"
+                    ? "green"
+                    : plan.type === "Popular"
+                      ? "blue"
+                      : "default",
+              borderColor:
+                plan.type === "Basic"
+                  ? "red"
+                  : plan.type === "Standard"
+                    ? "green"
+                    : plan.type === "Popular"
+                      ? "blue"
+                      : "default",
+            }}
           />
         </TableCell>
-
-        {/* Price */}
         <TableCell padding="normal">
-          <Box>
-            <Paragraph fontWeight={500}>
-              {formatPrice(plan.price)}
-              {plan.price > 0 && (
-                <Small color="text.secondary">/{plan.billingCycle.toLowerCase()}</Small>
-              )}
+          <div>
+            <Paragraph fontWeight={500} color="text.primary">
+              {plan.aiprompts}
             </Paragraph>
-            {plan.originalPrice > plan.price && (
-              <Small sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                ${plan.originalPrice}
-              </Small>
-            )}
-          </Box>
+          </div>
+        </TableCell>
+        <TableCell padding="normal">
+          <div>
+            <Paragraph fontWeight={500} color="text.primary">
+              {plan.updatedAt?.toDate
+                ? `${plan.updatedAt.toDate().toLocaleTimeString()} - ${plan.updatedAt.toDate().toLocaleDateString()}`
+                : "N/A"}
+            </Paragraph>
+          </div>
         </TableCell>
 
         {/* Weekly Decode Limit */}
-        <TableCell padding="normal">
+        {/* <TableCell padding="normal">
           <Paragraph fontWeight={500} color={plan.weeklyDecodeLimit === -1 ? 'primary.main' : 'text.primary'}>
             {formatDecodeLimit(plan.weeklyDecodeLimit)}
           </Paragraph>
         </TableCell>
 
         {/* Subscribers */}
-        <TableCell padding="normal">
+        {/* <TableCell padding="normal">
           <Paragraph fontWeight={500}>
-            {plan.subscriberCount.toLocaleString()}
+            {plan.subscriberCount?.toLocaleString()}
           </Paragraph>
           <Small color="text.secondary">
             {plan.conversionRate}% conversion
           </Small>
-        </TableCell>
+        </TableCell> */}
 
         {/* Status */}
-        <TableCell padding="normal">
+        {/* <TableCell padding="normal">
           <Chip 
             label={plan.status}
             size="small"
             color={getStatusColor(plan.status)}
           />
-        </TableCell>
+        </TableCell>  */}
 
         {/* Last Updated */}
-        <TableCell padding="normal">
+        {/* <TableCell padding="normal">
           <Paragraph fontSize={13}>
             {formatDate(plan.updatedAt)}
           </Paragraph>
           <Small color="text.secondary">
             by {plan.lastModifiedBy}
           </Small>
-        </TableCell>
+        </TableCell> */}
 
         {/* Actions */}
         <TableCell padding="normal">
@@ -306,13 +352,9 @@ export default function ServiceTableRow(props) {
             <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit Plan")}
-              handleClick={handleEditPlan}
+              handleClick={handleEditClick}
             />
-            <TableMoreMenuItem
-              Icon={SettingsOutlined}
-              title={t("Manage Decode Limits")}
-              handleClick={handleManageDecodes}
-            />
+
             {/* <TableMoreMenuItem
               Icon={TrendingUpOutlined}
               title={t("View Analytics")}
@@ -333,45 +375,64 @@ export default function ServiceTableRow(props) {
       </TableRow>
 
       {/* View Details Dialog */}
-      <Dialog open={openViewDialog} onClose={() => setOpenViewDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openViewDialog}
+        onClose={() => setOpenViewDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           <FlexBox alignItems="center" gap={2}>
             <Avatar sx={{ backgroundColor: plan.color }}>{plan.icon}</Avatar>
             <div>
               <Typography variant="h6">{plan.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
+              {/* <Typography variant="body2" color="text.secondary">
                 {plan.type} Plan - {formatPrice(plan.price)}
-              </Typography>
+              </Typography> */}
             </div>
           </FlexBox>
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" gutterBottom>Description</Typography>
-              <Typography variant="body2" paragraph>{plan.description}</Typography>
-              
-              <Typography variant="subtitle2" gutterBottom>Long Description</Typography>
-              <Typography variant="body2" paragraph>{plan.longDescription}</Typography>
+              <Typography variant="subtitle2" gutterBottom>
+                Description
+              </Typography>
+              <Typography variant="body2" paragraph>
+                {plan.description}
+              </Typography>
 
-              <Typography variant="subtitle2" gutterBottom>Button Configuration</Typography>
+              <Typography variant="subtitle2" gutterBottom>
+                Long Description
+              </Typography>
+              <Typography variant="body2" paragraph>
+                {plan.longDescription}
+              </Typography>
+
+              <Typography variant="subtitle2" gutterBottom>
+                Button Configuration
+              </Typography>
               <Typography variant="body2">Text: {plan.buttonText}</Typography>
-              <Typography variant="body2">Subtext: {plan.buttonSubtext}</Typography>
+              <Typography variant="body2">
+                Subtext: {plan.buttonSubtext}
+              </Typography>
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>Decode Limits</Typography>
               <Typography variant="body2">Weekly: {formatDecodeLimit(plan.weeklyDecodeLimit)}</Typography>
               <Typography variant="body2">Monthly: {formatDecodeLimit(plan.monthlyDecodeLimit)}</Typography>
               <Typography variant="body2">Daily: {formatDecodeLimit(plan.dailyDecodeLimit)}</Typography>
 
               <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>Statistics</Typography>
-              <Typography variant="body2">Subscribers: {plan.subscriberCount.toLocaleString()}</Typography>
+              <Typography variant="body2">Subscribers: {plan.subscriberCount?.toLocaleString()}</Typography>
               <Typography variant="body2">Conversion Rate: {plan.conversionRate}%</Typography>
               <Typography variant="body2">Churn Rate: {plan.churnRate}%</Typography>
-            </Grid>
+            </Grid> */}
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>Features</Typography>
-              <Grid container spacing={1}>
+              <Typography variant="subtitle2" gutterBottom>
+                Features
+              </Typography>
+              {/* <Grid container spacing={1}>
                 {plan.features.map((feature, index) => (
                   <Grid item key={index}>
                     <Chip 
@@ -382,7 +443,7 @@ export default function ServiceTableRow(props) {
                     />
                   </Grid>
                 ))}
-              </Grid>
+              </Grid> */}
             </Grid>
           </Grid>
         </DialogContent>
@@ -392,10 +453,15 @@ export default function ServiceTableRow(props) {
       </Dialog>
 
       {/* Edit Plan Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openEditDialog}
+        onClose={() => setOpenEditDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Edit Subscription Plan</DialogTitle>
         <DialogContent>
-          <Grid container spacing={3} sx={{ mt: 1 }}>
+          {/* <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -480,23 +546,29 @@ export default function ServiceTableRow(props) {
                 </Select>
               </FormControl>
             </Grid>
-          </Grid>
+          </Grid> */}
         </DialogContent>
-        <DialogActions>
+        {/* <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
           <Button onClick={handleSaveChanges} variant="contained">Save Changes</Button>
-        </DialogActions>
+        </DialogActions> */}
       </Dialog>
 
       {/* Manage Decode Limits Dialog */}
-      <Dialog open={openDecodeDialog} onClose={() => setOpenDecodeDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDecodeDialog}
+        onClose={() => setOpenDecodeDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Manage Weekly Decode Limits</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            Control how many AI decodes users can perform per week with this plan.
+            Control how many AI decodes users can perform per week with this
+            plan.
           </Typography>
-          
-          <TextField
+
+          {/* <TextField
             fullWidth
             label="Weekly Decode Limit"
             type="number"
@@ -507,9 +579,9 @@ export default function ServiceTableRow(props) {
             }}
             margin="normal"
             helperText="Enter -1 for unlimited decodes"
-          />
-          
-          <TextField
+          /> */}
+
+          {/* <TextField
             fullWidth
             label="Monthly Decode Limit"
             type="number"
@@ -520,10 +592,12 @@ export default function ServiceTableRow(props) {
             }}
             margin="normal"
             helperText="Enter -1 for unlimited decodes"
-          />
+          /> */}
 
-          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Quick Presets</Typography>
-          <Grid container spacing={1}>
+          <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
+            Quick Presets
+          </Typography>
+          {/* <Grid container spacing={1}>
             {Object.entries(DECODE_LIMIT_PRESETS).map(([key, preset]) => (
               <Grid item key={key}>
                 <Button
@@ -536,50 +610,66 @@ export default function ServiceTableRow(props) {
                 </Button>
               </Grid>
             ))}
-          </Grid>
+          </Grid> */}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDecodeDialog(false)}>Cancel</Button>
-          <Button onClick={handleSaveChanges} variant="contained">Update Limits</Button>
         </DialogActions>
       </Dialog>
 
       {/* Analytics Dialog */}
-      <Dialog open={openAnalyticsDialog} onClose={() => setOpenAnalyticsDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={openAnalyticsDialog}
+        onClose={() => setOpenAnalyticsDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Plan Analytics - {plan.name}</DialogTitle>
         <DialogContent>
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <Box textAlign="center" p={2} bgcolor="background.paper">
-                <Typography variant="h4" color="primary">{plan.subscriberCount.toLocaleString()}</Typography>
+                <Typography variant="h4" color="primary">
+                  {plan.subscriberCount?.toLocaleString()}
+                </Typography>
                 <Typography variant="body2">Total Subscribers</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box textAlign="center" p={2} bgcolor="background.paper">
-                <Typography variant="h4" color="success.main">{plan.conversionRate}%</Typography>
+                <Typography variant="h4" color="success.main">
+                  {plan.conversionRate}%
+                </Typography>
                 <Typography variant="body2">Conversion Rate</Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box textAlign="center" p={2} bgcolor="background.paper">
-                <Typography variant="h4" color="error.main">{plan.churnRate}%</Typography>
+                <Typography variant="h4" color="error.main">
+                  {plan.churnRate}%
+                </Typography>
                 <Typography variant="body2">Churn Rate</Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>Performance Metrics</Typography>
-              <Typography variant="body2">Views: {plan.viewCount.toLocaleString()}</Typography>
-              <Typography variant="body2">Clicks: {plan.clickCount.toLocaleString()}</Typography>
-              <Typography variant="body2">Signups: {plan.signupCount.toLocaleString()}</Typography>
+              <Typography variant="body2">Views: {plan.viewCount?.toLocaleString()}</Typography>
+              <Typography variant="body2">Clicks: {plan.clickCount?.toLocaleString()}</Typography>
+              <Typography variant="body2">Signups: {plan.signupCount?.toLocaleString()}</Typography>
               <Typography variant="body2">Avg Lifetime Value: ${plan.avgLifetimeValue}</Typography>
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" gutterBottom>Usage Statistics</Typography>
-              <Typography variant="body2">Weekly Decodes: {formatDecodeLimit(plan.weeklyDecodeLimit)}</Typography>
-              <Typography variant="body2">Monthly Decodes: {formatDecodeLimit(plan.monthlyDecodeLimit)}</Typography>
-              <Typography variant="body2">Support Level: {plan.supportLevel}</Typography>
-              <Typography variant="body2">Trial Days: {plan.trialDays}</Typography>
+              <Typography variant="subtitle2" gutterBottom>
+                Usage Statistics
+              </Typography>
+              {/* <Typography variant="body2">Weekly Decodes: {formatDecodeLimit(plan.weeklyDecodeLimit)}</Typography>
+              <Typography variant="body2">Monthly Decodes: {formatDecodeLimit(plan.monthlyDecodeLimit)}</Typography> */}
+              <Typography variant="body2">
+                Support Level: {plan.supportLevel}
+              </Typography>
+              <Typography variant="body2">
+                Trial Days: {plan.trialDays}
+              </Typography>
             </Grid>
           </Grid>
         </DialogContent>
@@ -593,13 +683,21 @@ export default function ServiceTableRow(props) {
         <DialogTitle>Delete Subscription Plan</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the plan "{plan.name}"? 
-            This action cannot be undone and will affect {plan.subscriberCount} subscribers.
+            Are you sure you want to delete the plan "{plan.name}"? This action
+            cannot be undone and will affect {plan.subscriberCount} subscribers.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete Plan</Button>
+          <Button onClick={handleDeleteCancel} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleDeleteConfirm(plan.id)}
+            color="error"
+            variant="contained"
+          >
+            Delete Plan
+          </Button>
         </DialogActions>
       </Dialog>
     </>

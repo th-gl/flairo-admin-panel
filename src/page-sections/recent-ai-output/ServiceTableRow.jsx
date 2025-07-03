@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import Checkbox from "@mui/material/Checkbox";
@@ -22,6 +22,14 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import { collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc, } from "firebase/firestore"; 
+  import { toast } from "react-toastify";
 import { OUTPUT_STATUS, AI_MODELS, CONFIDENCE_LEVELS } from "@/__fakeData__/aiOutputs";
 
 const getStatusColor = (status) => {
@@ -85,14 +93,18 @@ const getConfidenceColor = (score) => {
 };
 
 export default function ServiceTableRow(props) {
+  console.log('props',props)
   const { t } = useTranslation();
-  const { user: output, isSelected, handleSelectRow, handleDeleteService } = props;
-  console.log({output});
+  const { user: output, isSelected, handleSelectRow, handleDeleteService ,fetchUsers} = props;
+
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [openQADialog, setOpenQADialog] = useState(false);
+
+
+
 
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
@@ -106,15 +118,25 @@ export default function ServiceTableRow(props) {
     handleCloseOpenMenu();
   };
 
+  
+
   const handleDeleteCancel = () => {
     setOpenDialog(false);
   };
-
-  const handleDeleteConfirm = () => {
-    handleDeleteService(output?.id);
-    setOpenDialog(false);
-  };
-
+    const handleDeleteConfirm = async (userId) => {
+      console.log("userdddId", userId);
+  
+      try {
+        const userRef = doc(DB, "users", userId); // 'react' is the collection name
+        await deleteDoc(userRef);
+        toast.success(t("User deleted successfully"));
+        setOpenDialog(false);
+        await fetchUsers();
+      } catch (error) {
+        console.error("Error deleting user: ", error);
+        throw error;
+      }
+    };
   // View details
   const handleViewDetails = () => {
     setOpenDetailDialog(true);
@@ -158,19 +180,19 @@ export default function ServiceTableRow(props) {
 
   const statusStyle = getStatusColor(output?.status);
   const modelStyle = getModelColor(output?.ai_model);
-  const confidenceStyle = getConfidenceColor(output?.confidence_score);
+  const confidenceStyle = getConfidenceColor(output?.confidence_score)
 
   return (
     <>
       <TableRow hover>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
             checked={isSelected}
             onClick={(event) => handleSelectRow(event, output.id)}
           />
-        </TableCell>
+        </TableCell> */}
 
         {/* User */}
         <TableCell padding="normal">
@@ -178,7 +200,7 @@ export default function ServiceTableRow(props) {
          
             <div>
               <Paragraph fontWeight={500} color="text.primary">
-                {output?.device_id || "-"}
+                {output?.deviceId || "-"}
               </Paragraph>
               {/* <Paragraph fontSize={12} color="text.secondary">
                 {formatTimestamp(output?.timestamp)}
@@ -190,31 +212,35 @@ export default function ServiceTableRow(props) {
         {/* Output Type */}
         <TableCell padding="normal">
           <Paragraph fontWeight={500}>
-            {output?.output_type || "-"}
+            {output?.deviceModel || "-"}
           </Paragraph>
-          <Paragraph fontSize={12} color="text.secondary">
-            {truncateText(output?.prompt, 50)}
-          </Paragraph>
+       
         </TableCell>
+            <TableCell padding="normal">
+          <Paragraph fontWeight={500}>
+            {output?.platform || "-"}
+          </Paragraph>
+       
+        </TableCell>
+            <TableCell padding="normal">
+          <Paragraph fontWeight={500}>
+            {output?.osVersion || "-"}
+          </Paragraph>
+       
+        </TableCell>
+           <TableCell padding="normal">
+                  <Paragraph>
+                    {output?.lastLogin instanceof Date
+                      ? `${output.lastLogin.toLocaleTimeString("en-US", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })} - ${output.lastLogin.toLocaleDateString("en-GB")}`
+                      : "Never"}
+                  </Paragraph>
+                </TableCell>
 
-        {/* AI Model */}
-        <TableCell padding="normal">
-          <Chip
-            label={output?.ai_model || "Unknown"}
-            size="small"
-            sx={{
-              backgroundColor: modelStyle.backgroundColor,
-              color: modelStyle.textColor,
-              border: `1px solid ${modelStyle.borderColor}`,
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              height: '28px',
-              '& .MuiChip-label': {
-                px: 1.5,
-              }
-            }}
-          />
-        </TableCell>
+     
 
         {/* Status */}
         {/* <TableCell padding="normal">
@@ -343,7 +369,7 @@ export default function ServiceTableRow(props) {
           <Button onClick={handleDeleteCancel} color="primary">
             {t("Cancel")}
           </Button>
-          <Button onClick={handleDeleteConfirm} color="error">
+          <Button onClick={()=>handleDeleteConfirm(output.id)} color="error">
             {t("Delete")}
           </Button>
         </DialogActions>
@@ -352,7 +378,7 @@ export default function ServiceTableRow(props) {
       {/* Output Detail Dialog */}
       <Dialog open={openDetailDialog} onClose={handleDetailDialogClose} maxWidth="lg" fullWidth>
         <DialogTitle>
-          {t("AI Output Details")} - {output?.output_type}
+          {t("User Activity Detail")} - {output?.output_type}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -361,44 +387,29 @@ export default function ServiceTableRow(props) {
               <Paragraph variant="h6" gutterBottom>{t("Basic Information")}</Paragraph>
               <FlexBox flexDirection="column" gap={1}>
                 <FlexBox justifyContent="space-between">
-                  <Paragraph fontWeight={600}>{t("User")}:</Paragraph>
-                  <Paragraph>{output?.user_name} ({output?.user_email})</Paragraph>
+                  <Paragraph fontWeight={600}>{t("Device Id")}:</Paragraph>
+                  <Paragraph>{output?.deviceId}</Paragraph>
                 </FlexBox>
                 <FlexBox justifyContent="space-between">
-                  <Paragraph fontWeight={600}>{t("Request ID")}:</Paragraph>
-                  <Paragraph>{output?.request_id}</Paragraph>
+                  <Paragraph fontWeight={600}>{t("Device Model")}:</Paragraph>
+                  <Paragraph>{output?.deviceModel}</Paragraph>
                 </FlexBox>
                 <FlexBox justifyContent="space-between">
                   <Paragraph fontWeight={600}>{t("Timestamp")}:</Paragraph>
-                  <Paragraph>{formatTimestamp(output?.timestamp)}</Paragraph>
+                  <Paragraph>{formatTimestamp(output?.createdAt)}</Paragraph>
                 </FlexBox>
                 <FlexBox justifyContent="space-between">
-                  <Paragraph fontWeight={600}>{t("AI Model")}:</Paragraph>
-                  <Paragraph>{output?.ai_model}</Paragraph>
+                  <Paragraph fontWeight={600}>{t("Version")}:</Paragraph>
+                  <Paragraph>{output?.osVersion}</Paragraph>
+                </FlexBox>
+                 <FlexBox justifyContent="space-between">
+                  <Paragraph fontWeight={600}>{t("Platform")}:</Paragraph>
+                  <Paragraph>{output?.platform}</Paragraph>
                 </FlexBox>
               </FlexBox>
             </Box>
 
-            <Divider />
-
-            {/* Input/Output */}
-            <Box>
-              <Paragraph variant="h6" gutterBottom>{t("Input & Output")}</Paragraph>
-              <Box sx={{ mb: 2 }}>
-                <Paragraph fontWeight={600} gutterBottom>{t("Input Prompt")}:</Paragraph>
-                <Box sx={{ p: 2, backgroundColor: 'grey.100', borderRadius: 1, maxHeight: 150, overflow: 'auto' }}>
-                  <Paragraph fontSize={14}>{output?.input_text || output?.prompt}</Paragraph>
-                </Box>
-              </Box>
-              <Box>
-                <Paragraph fontWeight={600} gutterBottom>{t("AI Output")}:</Paragraph>
-                <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
-                  <Paragraph fontSize={14}>{output?.output_text}</Paragraph>
-                </Box>
-              </Box>
-            </Box>
-
-            <Divider />
+    
 
             {/* Performance Metrics */}
             {/* <Box>

@@ -215,7 +215,7 @@ export default function ServiceList() {
           <Card>
             <Box p={2}>
               <HeadingArea />
-              
+{/*               
               <FlexBox justifyContent="space-between" alignItems="center" mb={2}>
                 <FlexBox alignItems="center" gap={2}>
                   <Paragraph fontSize={14} color="text.secondary">
@@ -242,7 +242,7 @@ export default function ServiceList() {
                     </Paragraph>
                   </FlexBox>
                 )}
-              </FlexBox>
+              </FlexBox> */}
 
               <FlexBox gap={2} alignItems="center" mt={2} mb={2} flexWrap="wrap">
                 <Box flex={1} minWidth={250}>
@@ -316,34 +316,13 @@ export default function ServiceList() {
                   />
 
                   <TableBody>
-                    {displayedUsers.length > 0 ? (
-                      displayedUsers.map((user) => (
-                        <ServiceTableRow
-                          key={user.id}
-                          user={user}
-                          isSelected={isSelected(user.id)}
-                          handleSelectRow={handleSelectRow}
-                          handleDeleteService={handleDeleteService}
-                        />
-                      ))
-                    ) : (
-                      <TableDataNotFound />
-                    )}
+                <TableDataNotFound />
                   </TableBody>
                 </Table>
               </Scrollbar>
             </TableContainer>
 
-            <TablePagination
-              page={page}
-              component="div"
-              rowsPerPage={rowsPerPage}
-              count={filteredUsers.length}
-              onPageChange={handleChangePage}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelRowsPerPage={t("Rows per page")}
-            />
+        
           </Card>
         </>
       )}

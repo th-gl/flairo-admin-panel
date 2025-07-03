@@ -45,33 +45,33 @@ export default function ServiceTableHead(props) {
       sortable: true,
     },
     {
-      id: "price",
+      id: "aiprompts",
       numeric: true,
       disablePadding: false,
-      label: t("Price"),
+      label: t("Ai Prompts"),
       sortable: true,
     },
-    {
-      id: "weeklyDecodeLimit",
-      numeric: true,
-      disablePadding: false,
-      label: t("Weekly Decodes"),
-      sortable: true,
-    },
-    {
-      id: "subscriberCount",
-      numeric: true,
-      disablePadding: false,
-      label: t("Subscribers"),
-      sortable: true,
-    },
-    {
-      id: "status",
-      numeric: false,
-      disablePadding: false,
-      label: t("Status"),
-      sortable: true,
-    },
+    // {
+    //   id: "weeklyDecodeLimit",
+    //   numeric: true,
+    //   disablePadding: false,
+    //   label: t("Weekly Decodes"),
+    //   sortable: true,
+    // },
+    // {
+    //   id: "subscriberCount",
+    //   numeric: true,
+    //   disablePadding: false,
+    //   label: t("Subscribers"),
+    //   sortable: true,
+    // },
+    // {
+    //   id: "status",
+    //   numeric: false,
+    //   disablePadding: false,
+    //   label: t("Status"),
+    //   sortable: true,
+    // },
     {
       id: "updatedAt",
       numeric: false,
@@ -119,7 +119,7 @@ export default function ServiceTableHead(props) {
       }}
     >
       <TableRow>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
@@ -127,7 +127,7 @@ export default function ServiceTableHead(props) {
             checked={rowCount > 0 && numSelected === rowCount}
             indeterminate={numSelected > 0 && numSelected < rowCount}
           />
-        </TableCell>
+        </TableCell> */}
 
         {headCells.map((headCell) => (
           <TableCell

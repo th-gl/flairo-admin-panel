@@ -2,7 +2,7 @@ import HeadingArea from "../HeadingArea.jsx";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import SearchArea from "../SearchArea.jsx";
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import Scrollbar from "@/components/scrollbar";
@@ -22,7 +22,26 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FlexBox from "@/components/flexbox/FlexBox";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
 
+console.log("DB", DB);
 export default function UserList() {
   const { t } = useTranslation();
   const {
@@ -38,18 +57,83 @@ export default function UserList() {
     isSelected,
     handleChangePage,
   } = useMuiTable({ defaultOrderBy: "name" });
+  // const {DB}=useContext();
+  // console.log('DB',DB);
 
   const [users, setUsers] = useState(USER_LIST);
   console.log(users);
-  const [userFilter, setUserFilter] = useState({ 
-    role: "", 
-    search: "", 
-    accessLevel: "", 
-    planStatus: "" 
+  const [userFilter, setUserFilter] = useState({
+    role: "",
+    search: "",
+    accessLevel: "",
+    planStatus: "",
   });
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(USER_LIST.length);
+  const [openCreateUser, setOpenCreateUser] = useState(false);
+  const [openEditUser, setOpenEditUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
+  const [newUserData, setNewUserData] = useState({
+    deviceId: "",
+    freeAnalysisUsed: "",
+    deviceModel: "",
+    platform: "",
+    osVersion: "",
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUserData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const fetchUsers = async () => {
+    console.log("fetch trigger");
+    try {
+      setLoading(true); // Optional: show loader during fetch
+      const querySnapshot = await getDocs(collection(DB, "users"));
+      console.log("querySnapshot", querySnapshot);
+      const data = querySnapshot.docs.map((doc) => {
+        const userData = doc.data();
+        return {
+          id: doc.id,
+          ...userData,
+          lastLogin:
+            userData.lastLogin?.seconds != null
+              ? new Date(userData.lastLogin.seconds * 1000)
+              : null,
+        };
+      });
+      console.log("data", data);
+      setUsers(data);
+      setTotalRecords(data.length);
+    } catch (error) {
+      console.error("Error fetching users: ", error);
+      toast.error("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+const handleOpenEditUser = (user) => {
+  // Get the absolute value for display (remove negative sign if present)
+  const displayValue = user.freeAnalysisUsed?.toString().startsWith("-")
+    ? user.freeAnalysisUsed.toString().slice(1)
+    : user.freeAnalysisUsed?.toString() || "";
+
+  setEditingUser({
+    ...user,  // Keep all user properties
+    freeAnalysisUsed: displayValue  // Set the display value (positive string)
+  });
+  setOpenEditUser(true);
+};
   const handleChangeFilter = (key, value) => {
     setUserFilter((state) => ({
       ...state,
@@ -60,46 +144,46 @@ export default function UserList() {
   const filteredUsers = stableSort(users, getComparator(order, orderBy)).filter(
     (item) => {
       let matches = true;
-      
+
       if (userFilter.role) {
         matches = matches && item.role.toLowerCase() === userFilter.role;
       }
-      
+
       if (userFilter.search) {
         const searchTerm = userFilter.search.toLowerCase();
-        matches = matches && (
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.email.toLowerCase().includes(searchTerm) ||
-          item.company?.toLowerCase().includes(searchTerm)
-        );
+        matches =
+          matches &&
+          (item.name.toLowerCase().includes(searchTerm) ||
+            item.email.toLowerCase().includes(searchTerm) ||
+            item.company?.toLowerCase().includes(searchTerm));
       }
-      
+
       if (userFilter.accessLevel) {
         matches = matches && item.accessLevel === userFilter.accessLevel;
       }
-      
+
       if (userFilter.planStatus) {
         matches = matches && item.planStatus === userFilter.planStatus;
       }
-      
+
       return matches;
     }
   );
 
   const handleDeleteUser = (id) => {
     setUsers((state) => state.filter((item) => item.id !== id));
-    setTotalRecords(prev => prev - 1);
+    setTotalRecords((prev) => prev - 1);
   };
 
   const handleUpdateUser = (updatedUser) => {
-    setUsers((state) => state.map((item) => 
-      item.id === updatedUser.id ? updatedUser : item
-    ));
+    setUsers((state) =>
+      state.map((item) => (item.id === updatedUser.id ? updatedUser : item))
+    );
   };
 
   const handleAllUserDelete = () => {
     setUsers((state) => state.filter((item) => !selected.includes(item.id)));
-    setTotalRecords(prev => prev - selected.length);
+    setTotalRecords((prev) => prev - selected.length);
     handleSelectAllRows([])();
     toast.success(t("Selected users deleted successfully"));
   };
@@ -123,6 +207,34 @@ export default function UserList() {
     page * rowsPerPage + rowsPerPage
   );
 
+  const handleUpdateUserData = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Force negative value (unless zero)
+      const updatedValue =
+        editingUser.freeAnalysisUsed > 0
+          ? -Math.abs(editingUser.freeAnalysisUsed)
+          : editingUser.freeAnalysisUsed;
+
+      const updatedUser = {
+        ...editingUser,
+        freeAnalysisUsed: updatedValue,
+        updatedAt: new Date(),
+      };
+
+      const userRef = doc(DB, "users", editingUser.id);
+      await updateDoc(userRef, updatedUser);
+
+      handleUpdateUser(updatedUser);
+      toast.success("User updated successfully");
+      setOpenEditUser(false);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      toast.error("Failed to update user");
+    }
+  };
+
   return (
     <>
       {loading ? (
@@ -132,9 +244,9 @@ export default function UserList() {
           <Card>
             <Box p={2}>
               <HeadingArea />
-              
+
               {/* Enhanced Search and Filter Area */}
-              <FlexBox gap={2} alignItems="center" mt={2} mb={2} flexWrap="wrap">
+              {/* <FlexBox gap={2} alignItems="center" mt={2} mb={2} flexWrap="wrap">
                 <Box flex={1} minWidth={250}>
                   <SearchArea
                     value={userFilter.search}
@@ -176,7 +288,7 @@ export default function UserList() {
                     ))}
                   </Select>
                 </FormControl>
-              </FlexBox>
+              </FlexBox> */}
             </Box>
 
             {selected.length > 0 && (
@@ -211,6 +323,9 @@ export default function UserList() {
                           handleSelectRow={handleSelectRow}
                           handleDeleteUser={handleDeleteUser}
                           handleUpdateUser={handleUpdateUser}
+                          fetchUsers={fetchUsers}
+                          handleUpdateUserData={handleUpdateUserData}
+                          handleOpenEditUser={handleOpenEditUser}
                         />
                       ))
                     ) : (
@@ -232,8 +347,86 @@ export default function UserList() {
               labelRowsPerPage={t("Rows per page")}
             />
           </Card>
+          <Dialog
+            open={openEditUser}
+            onClose={() => setOpenEditUser(false)}
+            maxWidth="sm"
+            fullWidth
+          >
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+
+                const inputValue = parseFloat(editingUser?.freeAnalysisUsed);
+
+                if (isNaN(inputValue)) {
+                  toast.error("Please enter a valid number.");
+                  return;
+                }
+
+                if (inputValue < 0) {
+                  toast.error("Negative values are not allowed.");
+                  setEditingUser((prev) => ({
+                    ...prev,
+                    freeAnalysisUsed: "",
+                  }));
+                  return;
+                }
+
+                try {
+                  const updatedUser = {
+                    ...editingUser,
+                    freeAnalysisUsed: -Math.abs(inputValue), // Store as negative
+                    updatedAt: new Date(),
+                  };
+
+                  const userRef = doc(DB, "users", editingUser.id);
+                  await updateDoc(userRef, updatedUser);
+
+                  handleUpdateUser(updatedUser);
+                  toast.success("User updated successfully");
+                  setOpenEditUser(false);
+                } catch (err) {
+                  console.error("Error updating user:", err);
+                  toast.error("Failed to update user");
+                }
+              }}
+            >
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogContent>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="freeAnalysisUsed"
+                      label="Free Analysis Used"
+                      margin="normal"
+                      type="number"
+                      inputProps={{ min: 0 }} // Prevent negative input
+                      value={editingUser?.freeAnalysisUsed ?? ""}
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === "" ? null : Number(e.target.value);
+                        setEditingUser((prev) => ({
+                          ...prev,
+                          freeAnalysisUsed: value,
+                        }));
+                      }}
+                      required
+                    />
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenEditUser(false)}>Cancel</Button>
+                <Button type="submit" variant="contained">
+                  Save Changes
+                </Button>
+              </DialogActions>
+            </form>
+          </Dialog>
         </>
       )}
     </>
   );
-} 
+}

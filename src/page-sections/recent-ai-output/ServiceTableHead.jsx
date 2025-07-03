@@ -9,6 +9,15 @@ import { isDark } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { sortServices, unsortServices } from "./request";
+import { DB } from "@/contexts/firebaseContext.jsx";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 
 export default function ServiceTableHead(props) {
   useEffect(() => {
@@ -29,56 +38,103 @@ export default function ServiceTableHead(props) {
 
   const { t } = useTranslation();
   
+  
+  // const headCells = [
+  //   {
+  //     id: "user_name",
+  //     numeric: false,
+  //     disablePadding: false,
+  //     label: t("User"),
+  //     sortable: true,
+  //   },
+  //   {
+  //     id: "output_type",
+  //     numeric: false,
+  //     disablePadding: false,
+  //     label: t("Output Type"),
+  //     sortable: true,
+  //   },
+  //   {
+  //     id: "ai_model",
+  //     numeric: false,
+  //     disablePadding: false,
+  //     label: t("AI Model"),
+  //     sortable: true,
+  //   },
+  //   // {
+  //   //   id: "status",
+  //   //   numeric: false,
+  //   //   disablePadding: false,
+  //   //   label: t("Status"),
+  //   //   sortable: true,
+  //   // },
+  //   // {
+  //   //   id: "processing_time_ms",
+  //   //   numeric: true,
+  //   //   disablePadding: false,
+  //   //   label: t("Processing Time"),
+  //   //   sortable: true,
+  //   // },
+  //   // {
+  //   //   id: "confidence_score",
+  //   //   numeric: true,
+  //   //   disablePadding: false,
+  //   //   label: t("Confidence"),
+  //   //   sortable: true,
+  //   // },
+  //   // {
+  //   //   id: "qa_reviewed",
+  //   //   numeric: false,
+  //   //   disablePadding: false,
+  //   //   label: t("QA Status"),
+  //   //   sortable: true,
+  //   // },
+  //   {
+  //     id: "actions",
+  //     numeric: false,
+  //     disablePadding: false,
+  //     label: t("Actions"),
+  //     sortable: false,
+  //   },
+  // ];
   const headCells = [
     {
-      id: "user_name",
+      id: "device_id",
       numeric: false,
       disablePadding: false,
-      label: t("User"),
+      label: t("Device ID"),
+      sortable: true,
+    },
+
+
+    {
+      id: "devicemodel",
+      numeric: false,
+      disablePadding: false,
+      label: t("Device Model"),
       sortable: true,
     },
     {
-      id: "output_type",
+      id: "platform",
       numeric: false,
       disablePadding: false,
-      label: t("Output Type"),
+      label: t("Platform"),
+      sortable: true,
+    },
+      {
+      id: "osVersion",
+      numeric: false,
+      disablePadding: false,
+      label: t("Os Version"),
       sortable: true,
     },
     {
-      id: "ai_model",
+      id: "lastLogin",
       numeric: false,
       disablePadding: false,
-      label: t("AI Model"),
+      label: t("Last Login"),
       sortable: true,
     },
-    // {
-    //   id: "status",
-    //   numeric: false,
-    //   disablePadding: false,
-    //   label: t("Status"),
-    //   sortable: true,
-    // },
-    // {
-    //   id: "processing_time_ms",
-    //   numeric: true,
-    //   disablePadding: false,
-    //   label: t("Processing Time"),
-    //   sortable: true,
-    // },
-    // {
-    //   id: "confidence_score",
-    //   numeric: true,
-    //   disablePadding: false,
-    //   label: t("Confidence"),
-    //   sortable: true,
-    // },
-    // {
-    //   id: "qa_reviewed",
-    //   numeric: false,
-    //   disablePadding: false,
-    //   label: t("QA Status"),
-    //   sortable: true,
-    // },
     {
       id: "actions",
       numeric: false,
@@ -87,7 +143,6 @@ export default function ServiceTableHead(props) {
       sortable: false,
     },
   ];
-
   const createSortHandler = (property) => async (event) => {
     const isAsc = orderBy === property && order === "asc";
     const newOrder = isAsc ? "desc" : "asc";
@@ -119,7 +174,7 @@ export default function ServiceTableHead(props) {
       }}
     >
       <TableRow>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
@@ -127,7 +182,7 @@ export default function ServiceTableHead(props) {
             checked={rowCount > 0 && numSelected === rowCount}
             indeterminate={numSelected > 0 && numSelected < rowCount}
           />
-        </TableCell>
+        </TableCell> */}
 
         {headCells.map((headCell) => (
           <TableCell

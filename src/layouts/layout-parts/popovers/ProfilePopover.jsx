@@ -96,27 +96,15 @@ export default function ProfilePopover() {
         popoverClose={() => setOpen(false)}
         title={
           <FlexBox alignItems="center" gap={1}>
-            <Avatar
+            {/* <Avatar
               src={data.avatar ? data.avatar : "/static/user/user-11.png"}
               sx={{
                 width: 35,
                 height: 35,
               }}
-            />
+            /> */}
 
-            <div>
-              <H6 fontSize={14}>
              
-                {/* // data?.first_name ? */}
-                {data?.first_name ? data?.first_name : " "} &nbsp;
-                {data?.middle_name ? data?.middle_name : ""} &nbsp;
-                {data?.last_name ? data?.last_name : ""}
-                {/* // : t("username") */}
-              </H6>
-              {/* <Small color="text.secondary" display="block">
-                aaron@example.com
-              </Small> */}
-            </div>
           </FlexBox>
         }
       >
@@ -129,19 +117,19 @@ export default function ProfilePopover() {
             Profile & Account
           </StyledSmall> */}
 
-          <StyledSmall onClick={handleMenuItem("/account")}>
+          {/* <StyledSmall onClick={handleMenuItem("/account")}>
             {t("Settings")}
-          </StyledSmall>
+          </StyledSmall> */}
 
           {/* <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
             Manage Team
           </StyledSmall> */}
 
-          <Divider
+          {/* <Divider
             sx={{
               my: 1,
             }}
-          />
+          /> */}
 
           <StyledSmall onClick={logout}>{t("Sign Out")}</StyledSmall>
         </Box>

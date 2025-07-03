@@ -1,5 +1,4 @@
 import Grid from '@mui/material/Grid2'; // CUSTOM COMPONENT
-
 import FancyText from '@/components/fancy-text'; // STYLED COMPONENT
 
 import { StyledRoot } from './styles';

@@ -13,36 +13,39 @@ import { alpha } from "@mui/material/styles";
 
 export default function ServiceTableHead(props) {
   useEffect(() => {
-    document.title = "AI Prompts Management"
-  })
-  
-  const {
-    onSelectAllRows,
-    numSelected,
-    rowCount,
-    onRequestSort,
-    handleSort
-  } = props;
+    document.title = "AI Prompts Management";
+  });
+
+  const { onSelectAllRows, numSelected, rowCount, onRequestSort, handleSort } =
+    props;
 
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("");
   const [isSorted, setIsSorted] = useState(false);
 
   const { t } = useTranslation();
-  
+
   const headCells = [
+  
     {
-      id: "name",
+      id: "promptname",
       numeric: false,
       disablePadding: false,
       label: t("Prompt Name"),
       sortable: true,
     },
-    {
-      id: "category",
+      {
+      id: "apikey",
       numeric: false,
       disablePadding: false,
-      label: t("Category"),
+      label: t("Api Key"),
+      sortable: true,
+    },
+      {
+      id: "revenuecat_api_key",
+      numeric: false,
+      disablePadding: false,
+      label: t("Revenuecat Api Key"),
       sortable: true,
     },
     // {
@@ -52,13 +55,13 @@ export default function ServiceTableHead(props) {
     //   label: t("Status"),
     //   sortable: true,
     // },
-    {
-      id: "usage_count",
-      numeric: true,
-      disablePadding: false,
-      label: t("Usage"),
-      sortable: true,
-    },
+    // {
+    //   id: "prompt",
+    //   numeric: true,
+    //   disablePadding: false,
+    //   label: t("Prompt"),
+    //   sortable: true,
+    // },
     {
       id: "updated_at",
       numeric: false,
@@ -83,7 +86,7 @@ export default function ServiceTableHead(props) {
     setIsSorted(true);
     onRequestSort(event, property);
     handleSort(newOrder, property);
-    
+
     try {
       // Future API integration for sorting AI prompts
     } catch (error) {
@@ -106,7 +109,7 @@ export default function ServiceTableHead(props) {
       }}
     >
       <TableRow>
-        <TableCell padding="checkbox">
+        {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
             color="primary"
@@ -114,18 +117,19 @@ export default function ServiceTableHead(props) {
             checked={rowCount > 0 && numSelected === rowCount}
             indeterminate={numSelected > 0 && numSelected < rowCount}
             sx={{
-              '&.Mui-checked': {
-                color: 'primary.main',
+              "&.Mui-checked": {
+                color: "primary.main",
               },
-              '&.MuiCheckbox-indeterminate': {
-                color: 'primary.main',
+              "&.MuiCheckbox-indeterminate": {
+                color: "primary.main",
               },
-              '&:hover': {
-                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              "&:hover": {
+                backgroundColor: (theme) =>
+                  alpha(theme.palette.primary.main, 0.1),
               },
             }}
           />
-        </TableCell>
+        </TableCell> */}
 
         {headCells.map((headCell) => (
           <TableCell
@@ -146,7 +150,9 @@ export default function ServiceTableHead(props) {
                 {headCell.label}
                 {isSorted && orderBy === headCell.id ? (
                   <Span sx={visuallyHidden}>
-                    {order === "desc" ? "sorted descending" : "sorted ascending"}
+                    {order === "desc"
+                      ? "sorted descending"
+                      : "sorted ascending"}
                   </Span>
                 ) : null}
               </TableSortLabel>

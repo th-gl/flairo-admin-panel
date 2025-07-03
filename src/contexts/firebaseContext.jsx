@@ -1,7 +1,7 @@
 import { createContext, useEffect, useReducer, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'; // CUSTOM COMPONENT
-
+import { getFirestore } from "firebase/firestore";
 import { SplashScreen } from '@/components/splash-screen'; // CONFIGURATION SETTINGS
 
 const firebaseConfig = {
@@ -12,11 +12,20 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  // apiKey: "AIzaSyAPFmMN0qx4BX1t-JDn_zTez1GMURCpUEw",
+  // authDomain: "flairo-app.firebaseapp.com",
+  // databaseURL: "https://flairo-app-default-rtdb.firebaseio.com",
+  // projectId: "flairo-app",
+  // storageBucket: "flairo-app.firebasestorage.app",
+  // messagingSenderId: "621209753190",
+  // appId: "1:621209753190:web:2b395d54e315842c8bbfa7",
+  // measurementId: "G-FGYP70CC5J"
 }; // ==============================================================
 
-console.log({firebaseConfig});
+console.log('firebaseConfig',firebaseConfig)
 // ==============================================================
 const app = initializeApp(firebaseConfig);
+export  const DB = getFirestore(app)
 const auth = getAuth(app);
 const initialAuthState = {
   user: null,
