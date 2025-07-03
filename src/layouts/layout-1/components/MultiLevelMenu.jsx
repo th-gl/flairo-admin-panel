@@ -43,11 +43,11 @@ export default function MultiLevelMenu({ sidebarCompact }) {
       icon: duotone.Edit,
       path: "/ai-prompts-list",
     },
-    {
-      name: t("Subscription Plans"),
-      icon: duotone.Pricing,
-      path: "/subscription-plans-list",
-    }
+    // {
+    //   name: t("Subscription Plans"),
+    //   icon: duotone.Pricing,
+    //   path: "/subscription-plans-list",
+    // }
   ];
 
   const { user } = useAuth();

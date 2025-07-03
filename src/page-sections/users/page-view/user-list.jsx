@@ -23,6 +23,8 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FlexBox from "@/components/flexbox/FlexBox";
 import { DB } from "@/contexts/firebaseContext.jsx";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
 import {
   collection,
   addDoc,
@@ -31,6 +33,13 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
 
 console.log("DB", DB);
 export default function UserList() {
@@ -61,9 +70,28 @@ export default function UserList() {
   });
   const [loading, setLoading] = useState(false);
   const [totalRecords, setTotalRecords] = useState(USER_LIST.length);
+  const [openCreateUser, setOpenCreateUser] = useState(false);
+  const [openEditUser, setOpenEditUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+
+  const [newUserData, setNewUserData] = useState({
+    deviceId: "",
+    freeAnalysisUsed: "",
+    deviceModel: "",
+    platform: "",
+    osVersion: "",
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUserData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const fetchUsers = async () => {
-    console.log("fetch trigger")
+    console.log("fetch trigger");
     try {
       setLoading(true); // Optional: show loader during fetch
       const querySnapshot = await getDocs(collection(DB, "users"));
@@ -94,6 +122,18 @@ export default function UserList() {
     fetchUsers();
   }, []);
 
+const handleOpenEditUser = (user) => {
+  // Get the absolute value for display (remove negative sign if present)
+  const displayValue = user.freeAnalysisUsed?.toString().startsWith("-")
+    ? user.freeAnalysisUsed.toString().slice(1)
+    : user.freeAnalysisUsed?.toString() || "";
+
+  setEditingUser({
+    ...user,  // Keep all user properties
+    freeAnalysisUsed: displayValue  // Set the display value (positive string)
+  });
+  setOpenEditUser(true);
+};
   const handleChangeFilter = (key, value) => {
     setUserFilter((state) => ({
       ...state,
@@ -166,6 +206,34 @@ export default function UserList() {
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
+
+  const handleUpdateUserData = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Force negative value (unless zero)
+      const updatedValue =
+        editingUser.freeAnalysisUsed > 0
+          ? -Math.abs(editingUser.freeAnalysisUsed)
+          : editingUser.freeAnalysisUsed;
+
+      const updatedUser = {
+        ...editingUser,
+        freeAnalysisUsed: updatedValue,
+        updatedAt: new Date(),
+      };
+
+      const userRef = doc(DB, "users", editingUser.id);
+      await updateDoc(userRef, updatedUser);
+
+      handleUpdateUser(updatedUser);
+      toast.success("User updated successfully");
+      setOpenEditUser(false);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      toast.error("Failed to update user");
+    }
+  };
 
   return (
     <>
@@ -256,7 +324,8 @@ export default function UserList() {
                           handleDeleteUser={handleDeleteUser}
                           handleUpdateUser={handleUpdateUser}
                           fetchUsers={fetchUsers}
-
+                          handleUpdateUserData={handleUpdateUserData}
+                          handleOpenEditUser={handleOpenEditUser}
                         />
                       ))
                     ) : (
@@ -278,6 +347,84 @@ export default function UserList() {
               labelRowsPerPage={t("Rows per page")}
             />
           </Card>
+          <Dialog
+            open={openEditUser}
+            onClose={() => setOpenEditUser(false)}
+            maxWidth="sm"
+            fullWidth
+          >
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+
+                const inputValue = parseFloat(editingUser?.freeAnalysisUsed);
+
+                if (isNaN(inputValue)) {
+                  toast.error("Please enter a valid number.");
+                  return;
+                }
+
+                if (inputValue < 0) {
+                  toast.error("Negative values are not allowed.");
+                  setEditingUser((prev) => ({
+                    ...prev,
+                    freeAnalysisUsed: "",
+                  }));
+                  return;
+                }
+
+                try {
+                  const updatedUser = {
+                    ...editingUser,
+                    freeAnalysisUsed: -Math.abs(inputValue), // Store as negative
+                    updatedAt: new Date(),
+                  };
+
+                  const userRef = doc(DB, "users", editingUser.id);
+                  await updateDoc(userRef, updatedUser);
+
+                  handleUpdateUser(updatedUser);
+                  toast.success("User updated successfully");
+                  setOpenEditUser(false);
+                } catch (err) {
+                  console.error("Error updating user:", err);
+                  toast.error("Failed to update user");
+                }
+              }}
+            >
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogContent>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="freeAnalysisUsed"
+                      label="Free Analysis Used"
+                      margin="normal"
+                      type="number"
+                      inputProps={{ min: 0 }} // Prevent negative input
+                      value={editingUser?.freeAnalysisUsed ?? ""}
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === "" ? null : Number(e.target.value);
+                        setEditingUser((prev) => ({
+                          ...prev,
+                          freeAnalysisUsed: value,
+                        }));
+                      }}
+                      required
+                    />
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setOpenEditUser(false)}>Cancel</Button>
+                <Button type="submit" variant="contained">
+                  Save Changes
+                </Button>
+              </DialogActions>
+            </form>
+          </Dialog>
         </>
       )}
     </>

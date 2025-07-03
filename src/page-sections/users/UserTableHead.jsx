@@ -8,6 +8,7 @@ import { Span } from "@/components/typography";
 import { isDark } from "@/utils/constants";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import Box from '@mui/material/Box';
 
 export default function UserTableHead(props) {
   const {
@@ -30,6 +31,20 @@ export default function UserTableHead(props) {
       numeric: false,
       disablePadding: false,
       label: t("Device ID"),
+      sortable: true,
+    },
+           {
+      id: "email",
+      numeric: false,
+      disablePadding: false,
+      label: t("Email"),
+      sortable: true,
+    },
+       {
+      id: "freeAnalysisUsed",
+      numeric: false,
+      disablePadding: false,
+      label: t("Free Analysis Used"),
       sortable: true,
     },
 
@@ -107,6 +122,7 @@ export default function UserTableHead(props) {
             sx={{
               color: "text.primary",
               fontWeight: 600,
+              width:"auto"
             }}
           >
             {headCell.sortable ? (
@@ -115,7 +131,17 @@ export default function UserTableHead(props) {
                 onClick={createSortHandler(headCell.id)}
                 direction={isSorted && orderBy === headCell.id ? order : "asc"}
               >
-                {headCell.label}
+                     <Box
+          sx={{
+            maxWidth: 140, // ← Set your desired max width
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {headCell.label}
+        </Box>
+            
                 {isSorted && orderBy === headCell.id ? (
                   <Span sx={visuallyHidden}>
                     {order === "desc"
