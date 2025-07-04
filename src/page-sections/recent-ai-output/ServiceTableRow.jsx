@@ -162,11 +162,10 @@ export default function ServiceTableRow(props) {
     // Implementation for flagging output for review
     handleCloseOpenMenu();
   };
-
-  const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  };
+const formatTimestamp = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString();
+};
 
   const formatProcessingTime = (ms) => {
     if (ms < 1000) return `${ms}ms`;
@@ -395,9 +394,10 @@ export default function ServiceTableRow(props) {
                   <Paragraph>{output?.deviceModel}</Paragraph>
                 </FlexBox>
                 <FlexBox justifyContent="space-between">
-                  <Paragraph fontWeight={600}>{t("Timestamp")}:</Paragraph>
+                  <Paragraph fontWeight={600}>{t("Created At")}:</Paragraph>
                   <Paragraph>{formatTimestamp(output?.createdAt)}</Paragraph>
                 </FlexBox>
+                 
                 <FlexBox justifyContent="space-between">
                   <Paragraph fontWeight={600}>{t("Version")}:</Paragraph>
                   <Paragraph>{output?.osVersion}</Paragraph>

@@ -133,7 +133,7 @@ export default function LoginPageView() {
 
               <TextField
                 fullWidth
-                placeholder={t("Enter your work Phone Number")}
+                placeholder={t("Enter your email")}
                 name="email"
                 onBlur={handleBlur}
                 value={values.email}
@@ -200,7 +200,7 @@ export default function LoginPageView() {
           </Grid>
         </form>
 
-        <Divider
+        {/* <Divider
           sx={{
             my: 4,
             color: "text.secondary",
@@ -227,7 +227,7 @@ export default function LoginPageView() {
         </Button>
             </Grid>
         
-        </FlexBox>
+        </FlexBox> */}
       </Box>
     </Layout>
   );

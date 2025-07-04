@@ -387,12 +387,27 @@ export default function ServiceList() {
 
   const handleAddNewPrompt = async () => {
     try {
-      // Validate required fields
-      if (!newPrompt.name || !newPrompt.key || !newPrompt.prompt) {
-        toast.error(t("Please fill all required fields"));
-        return;
-      }
+    const { name, key, prompt, revenuecat_api_key } = newPrompt;
 
+  if (!name.trim()) {
+    toast.error(t("Prompt name is required"));
+    return;
+  }
+
+  if (!key.trim()) {
+    toast.error(t("API key is required"));
+    return;
+  }
+
+  if (!revenuecat_api_key.trim()) {
+    toast.error(t("RevenueCat API key is required"));
+    return;
+  }
+
+  if (!prompt.trim()) {
+    toast.error(t("Prompt text is required"));
+    return;
+  }
       const currentTime = new Date();
       const promptData = {
         name: newPrompt.name,

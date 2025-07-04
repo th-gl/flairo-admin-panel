@@ -102,37 +102,47 @@ export default function ProfilePopover() {
                 width: 35,
                 height: 35,
               }}
-            /> */}
+            />  */}
 
              
           </FlexBox>
         }
       >
-        <Box pt={1}>
-          {/* <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
+        {/* <Box pt={1}>
+        <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
             Set Status
           </StyledSmall>
 
           <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
             Profile & Account
-          </StyledSmall> */}
+          </StyledSmall>
 
-          {/* <StyledSmall onClick={handleMenuItem("/account")}>
+          <StyledSmall onClick={handleMenuItem("/account")}>
             {t("Settings")}
-          </StyledSmall> */}
+          </StyledSmall>
 
-          {/* <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
+          <StyledSmall onClick={handleMenuItem("/dashboard/profile")}>
             Manage Team
-          </StyledSmall> */}
+          </StyledSmall>
 
-          {/* <Divider
+          <Divider
             sx={{
               my: 1,
             }}
-          /> */}
+          />
 
-          <StyledSmall onClick={logout}>{t("Sign Out")}</StyledSmall>
-        </Box>
+         <StyledSmall onClick={logout}>{t("Sign Out")}</StyledSmall>
+        </Box> */}
+
+        <Box pt={1}>
+  <StyledSmall onClick={handleMenuItem("/account")}>
+    Profile Edit 
+  </StyledSmall>
+
+  <Divider sx={{ my: 1 }} />
+
+  <StyledSmall onClick={logout}>{t("Sign Out")}</StyledSmall>
+</Box>
       </PopoverLayout>
     </Fragment>
   );

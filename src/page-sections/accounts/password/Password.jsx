@@ -1,290 +1,165 @@
-import React, { useEffect, useState } from "react";
-
-import Card from "@mui/material/Card";
-import Grid from "@mui/material/Grid2";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
+import React, { useState } from "react";
+import {
+  Card,
+  Grid,
+  Stack,
+  Button,
+  Divider,
+  TextField,
+  ButtonBase,
+} from "@mui/material";
 import * as Yup from "yup";
-import { useFormik } from "formik"; // CUSTOM COMPONENTS
-
-import { changePassword } from "./request";
-import { getProfile } from "../basic-information/request";
-import FlexBox from "@/components/flexbox/FlexBox";
-import { H6, Paragraph, Small } from "@/components/typography"; // STYLED COMPONENT
+import { useFormik } from "formik";
 import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff"; // CUSTOM DEFINED HOOK
-import ButtonBase from "@mui/material/ButtonBase";
-import { FormWrapper, Dot } from "./styles";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { toast } from "react-toastify";
-
-import { useTranslation } from "react-i18next";
+import { changePassword } from "./request";
+import { H6 } from "@/components/typography";
 
 export default function Password() {
   const [showPassword, setShowPassword] = useState(false);
-  const [shownewPassword, setShownewPassword] = useState(false);
-  const [showcurrentPassword, setShowcurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
-  const { t } = useTranslation();
-
-  // const [data, setData] = useState({});
   const initialValues = {
-    user_id: "",
-    new_password: "",
     current_password: "",
+    new_password: "",
     confirm_password: "",
   };
+
   const validationSchema = Yup.object({
     current_password: Yup.string()
-      .min(3, `${t("Must be greater then 3 characters")}`)
-      .required(`${t("Current Password is Required!")}`),
-      new_password: Yup.string()
-      .min(8, `${t("new_password-must-be-at-least-8-characters")}`)
-      .required(`${t("New-Password-is-Required!")}`),
-    
-    confirm_password: Yup.string().test(
-      `${t("password-should-match")}`,
-      `${t("Passwords must match")}`,
-      function (value) {
-        return this.parent.new_password === value;
-      }
-    ),
+      .min(8, "Must be at least 8 characters")
+      .required("Current Password is required"),
+    new_password: Yup.string()
+      .min(8, "New Password must be at least 8 characters")
+      .required("New Password is required"),
+    confirm_password: Yup.string()
+      .oneOf([Yup.ref("new_password")], "Passwords must match")
+      .required("Confirm Password is required"),
   });
-  const REQUIREMENTS = [
-    t("Minimum 8 characters long - the more, the better"),
-    t("At least one lowercase character"),
-    t("At least one uppercase character"),
-    t("At least one number, symbol, or whitespace character"),
 
-  ];
-  const {
-    values,
-    errors,
-    setValues,
-    handleSubmit,
-    handleChange,
-    handleBlur,
-    resetForm,
-    touched,
-  } = useFormik({
+  const formik = useFormik({
     initialValues,
     validationSchema,
-    validateOnBlur: false, // Disable validation on blur
-    validateOnChange: false, // Disable validation on change
-    validateOnSubmit: true, // Enable validation on submit
-    onSubmit: async (values) => {
-      // console.log({ values });
+    onSubmit: async (values, { resetForm }) => {
       try {
+        
         const response = await changePassword(values);
-        // console.log({ response });
         if (response.success) {
-          // If the password change is successful
-          toast.success(`${t("Password Saved Successfully")}`);
-          // resetForm();
+          toast.success("Password updated successfully");
+          resetForm();
         } else {
-          // If the server responds with an error but no exception is thrown
-          toast.error(response.message || `${t("Current Password Incorrect")}`);
+          toast.error(response.message || "Password update failed");
         }
       } catch (error) {
-        // If an error occurs during the API call
-        console.error({ error });
-        toast.error(`${t("Current Password Incorrect")}`);
+        toast.error(error.message || "An error occurred during password update");
       }
     },
-    
-
-    // onSubmit: async (values) => {
-    //   console.log({ values });
-    //   try {
-    //     const response = await changePassword(values);
-    //     console.log({ response });
-    //     if (response.success) {
-    //       // console.log({ response });
-    //       toast.success(`${t("Password Saved Successfully")}`);
-    //       // resetForm();
-    //     }
-    //   } catch (error) {
-    //     // console.error({ error });
-    //     toast.error(`${t("Current Password Incorrect")}`);
-    //     throw error;
-    //   }
-    // },
   });
-
-  const fetchData = async () => {
-    try {
-      const response = await getProfile();
-      if (response.success) {
-        setValues({ user_id: response?.data?.id });
-      }
-    } catch (error) {
-      // console.error(error);
-       toast.error(`${t("Current password is Incorrect")}`);
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   return (
     <Card>
       <H6 fontSize={14} p={3}>
-        {t("Change Your Password")}
+        Change Your Password
       </H6>
-
       <Divider />
+      <form onSubmit={formik.handleSubmit}>
+        <Grid container spacing={4} p={3}>
+          <Grid item xs={12} sm={6}>
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                name="current_password"
+                type={showCurrentPassword ? "text" : "password"}
+                label="Current Password"
+                value={formik.values.current_password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={Boolean(
+                  formik.touched.current_password && formik.errors.current_password
+                )}
+                helperText={
+                  formik.touched.current_password && formik.errors.current_password
+                }
+                InputProps={{
+                  endAdornment: (
+                    <ButtonBase onClick={() => setShowCurrentPassword((prev) => !prev)}>
+                      {showCurrentPassword ? (
+                        <VisibilityOff fontSize="small" />
+                      ) : (
+                        <Visibility fontSize="small" />
+                      )}
+                    </ButtonBase>
+                  ),
+                }}
+              />
 
-      <FormWrapper>
-        <Grid container spacing={5}>
-          <Grid
-            size={{
-              sm: 6,
-              xs: 12,
-            }}
-          >
-            <form onSubmit={handleSubmit}>
-              <Stack spacing={4}>
-            
-               <TextField
-                  fullWidth
-                  type={showcurrentPassword ? "text" : "password"}
-                  variant="outlined"
-                  name="current_password"
-                  label={t("Current Password")}
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.current_password}
-                  helperText={errors.current_password ? errors.current_password : ""}
-                  error={Boolean(errors.current_password)}
-                  // helperText={
-                  //   touched.current_password && errors.current_password
-                  // }
-                  // error={Boolean(
-                  //   touched.current_password && errors.current_password
-                  // )}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <ButtonBase
-                          disableRipple
-                          disableTouchRipple
-                          onClick={() => setShowcurrentPassword(!showcurrentPassword)}
-                        >
-                          {showcurrentPassword ? (
-                            <VisibilityOff fontSize="small" />
-                          ) : (
-                            <Visibility fontSize="small" />
-                          )}
-                        </ButtonBase>
-                      ),
-                    },
-                  }}
-                /> 
+              <TextField
+                fullWidth
+                name="new_password"
+                type={showNewPassword ? "text" : "password"}
+                label="New Password"
+                value={formik.values.new_password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={Boolean(
+                  formik.touched.new_password && formik.errors.new_password
+                )}
+                helperText={
+                  formik.touched.new_password && formik.errors.new_password
+                }
+                InputProps={{
+                  endAdornment: (
+                    <ButtonBase onClick={() => setShowNewPassword((prev) => !prev)}>
+                      {showNewPassword ? (
+                        <VisibilityOff fontSize="small" />
+                      ) : (
+                        <Visibility fontSize="small" />
+                      )}
+                    </ButtonBase>
+                  ),
+                }}
+              />
 
-                <TextField
-                  fullWidth
-                  type={shownewPassword ? "text" : "password"}
-                  name="new_password"
-                  variant="outlined"
-                  label={t("New Password")}
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.new_password}
-                  helperText={errors.new_password ? errors.new_password : ""}
-                  error={Boolean(errors.new_password)}
-                  // helperText={touched.new_password && errors.new_password}
-                  // error={Boolean(touched.new_password && errors.new_password)}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <ButtonBase
-                          disableRipple
-                          disableTouchRipple
-                          onClick={() => setShownewPassword(!shownewPassword)}
-                        >
-                          {shownewPassword? (
-                            <VisibilityOff fontSize="small" />
-                          ) : (
-                            <Visibility fontSize="small" />
-                          )}
-                        </ButtonBase>
-                      ),
-                    },
-                  }}
-                />
-
-                <TextField
-                  fullWidth
-                  type={showPassword ? "text" : "password"}
-                  variant="outlined"
-                  name="confirm_password"
-                  label={t("Confirm Password")}
-                  onBlur={handleBlur}
-                  onChange={handleChange}
-                  value={values.confirm_password}
-                  helperText={errors.confirm_password ? errors.confirm_password : ""}
-                  error={Boolean(errors.confirm_password)}
-                  // helperText={
-                  //   touched.confirm_password && errors.confirm_password
-                  // }
-                  // error={Boolean(
-                  //   touched.confirm_password && errors.confirm_password
-                  // )}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <ButtonBase
-                          disableRipple
-                          disableTouchRipple
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <VisibilityOff fontSize="small" />
-                          ) : (
-                            <Visibility fontSize="small" />
-                          )}
-                        </ButtonBase>
-                      ),
-                    },
-                  }}
-                />
-              </Stack>
-
-              <Stack direction="row" spacing={2} mt={4}>
-                <Button type="submit" variant="contained">
-                  {t("Save Changes")}
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  onClick={() => resetForm()} // Reset the form when Cancel is clicked
-                >
-                  {t("Cancel")}
-                </Button>
-              </Stack>
-            </form>
-          </Grid>
-
-          {/* <Grid size={12}>
-            <Paragraph fontWeight={500}>Password requirements:</Paragraph>
-            <Small color="grey.500">
-              Ensure that these requirements are met:
-            </Small>
-
-            <Stack spacing={1} mt={2}>
-              {REQUIREMENTS.map((item) => (
-                <FlexBox alignItems="center" gap={1} key={item}>
-                  <Dot />
-                  <Small>{item}</Small>
-                </FlexBox>
-              ))}
+              <TextField
+                fullWidth
+                name="confirm_password"
+                type={showPassword ? "text" : "password"}
+                label="Confirm Password"
+                value={formik.values.confirm_password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={Boolean(
+                  formik.touched.confirm_password && formik.errors.confirm_password
+                )}
+                helperText={
+                  formik.touched.confirm_password && formik.errors.confirm_password
+                }
+                InputProps={{
+                  endAdornment: (
+                    <ButtonBase onClick={() => setShowPassword((prev) => !prev)}>
+                      {showPassword ? (
+                        <VisibilityOff fontSize="small" />
+                      ) : (
+                        <Visibility fontSize="small" />
+                      )}
+                    </ButtonBase>
+                  ),
+                }}
+              />
             </Stack>
-          </Grid> */}
+            <Stack direction="row" spacing={2} mt={4}>
+              <Button type="submit" variant="contained">
+                Save Changes
+              </Button>
+              <Button variant="outlined" onClick={formik.handleReset}>
+                Cancel
+              </Button>
+            </Stack>
+          </Grid>
         </Grid>
-      </FormWrapper>
+      </form>
     </Card>
   );
 }
