@@ -24,3 +24,5 @@ dist-ssr
 *.sln
 *.sw?
 tools/output
+
+amplify/backend/serviceAcount.json
