@@ -45,6 +45,9 @@ const RecentAiOutputListView = Loadable(
 const AiPromptsListView = Loadable(
   lazy(() => import("@/pages/dashboard/ai-prompts/ServiceList"))
 );
+const OutputsAiListView = Loadable(
+  lazy(() => import("@/pages/dashboard/outputs-ai/ServiceList"))
+);
 // const UserGridView = Loadable(
 //   lazy(() => import("@/pages/dashboard/users/user-grid-1"))
 // );
@@ -194,6 +197,10 @@ export const DashboardRoutes = [
       {
         path: "ai-prompts-list",
         element: <AiPromptsListView />,
+      },
+      {
+        path: "outputs-ai-list",
+        element: <OutputsAiListView />,
       },
       {
         path: "add-user/:id",

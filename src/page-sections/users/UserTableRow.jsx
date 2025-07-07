@@ -159,27 +159,37 @@ export default function UserTableRow(props) {
   };
 
   const functions = getFunctions();
-const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
+// const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
 
-  const handleDeleteConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      // 1️⃣ Delete from Firestore
-      await deleteDoc(doc(DB, "users", user.id));
+const handleDeleteConfirm = async () => {
+  setIsDeleting(true);
+  try {
+    // 1. Delete from Firebase Auth via custom backend
+    const response = await fetch("http://localhost:5000/delete-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ uid: user.id }),
+    });
 
-      // 2️⃣ Call Firebase Function — NO fetch!
-      const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
-      await deleteUserAccount({ uid: user.id });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Unknown error");
 
-      toast.success("User deleted from Firestore & Auth ✅");
-      await fetchUsers();
-    } catch (error) {
-      console.error(error);
-      toast.error("Error deleting user: " + error.message);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+    // 2. Delete Firestore document from 'users' collection
+    const userRef = doc(DB, "users", user.id); // 'user.id' should match the Firestore document ID
+    await deleteDoc(userRef);
+
+    toast.success("User deleted successfully ✅");
+    await fetchUsers();
+    setOpenDeleteDialog(false);
+  } catch (err) {
+    console.error("Error deleting user: ", err);
+    toast.error("Error: " + err.message);
+  } finally {
+    setIsDeleting(false);
+  }
+};
 
 
 

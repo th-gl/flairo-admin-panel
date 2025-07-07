@@ -35,16 +35,23 @@ export default function ServiceTableHead(props) {
       sortable: true,
     },
       {
-      id: "timestamp",
+      id: "Time",
       numeric: false,
       disablePadding: false,
-      label: t("Time Stamps"),
+      label: t("Api Key"),
       sortable: true,
     },
-    
+      {
+      id: "revenuecat_api_key",
+      numeric: false,
+      disablePadding: false,
+      label: t("Revenuecat Api Key"),
+      sortable: true,
+    },
     // {
     //   id: "status",
-    //   numeric: false,
+    //   numeric: false,table cliick on view title or value show on view
+    
     //   disablePadding: false,
     //   label: t("Status"),
     //   sortable: true,
@@ -56,7 +63,13 @@ export default function ServiceTableHead(props) {
     //   label: t("Prompt"),
     //   sortable: true,
     // },
-
+    {
+      id: "updated_at",
+      numeric: false,
+      disablePadding: false,
+      label: t("Last Updated"),
+      sortable: true,
+    },
     {
       id: "actions",
       numeric: false,

@@ -1,7 +1,7 @@
 import { createContext, useEffect, useReducer, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'; // CUSTOM COMPONENT
-import { getFirestore } from "firebase/firestore";
+import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'; // CUSTOM COMPONENT
+import { getFirestore, doc, deleteDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { SplashScreen } from '@/components/splash-screen'; // CONFIGURATION SETTINGS
 
@@ -131,9 +131,8 @@ const handleDeleteConfirm = async () => {
     await deleteDoc(doc(DB, "ai_outputs", selectedUserId));
     // 3. Delete from Auth (if UID exists)
     if (userUid) {
-      const functions = getFunctions();
-      const deleteUserFromAuth = httpsCallable(functions, "deleteUserFromAuth");
-      await deleteUserFromAuth({ uid: userUid });
+      const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
+      await deleteUserAccount({ uid: user.id });
     }
     toast.success(t("User deleted successfully"));
     setOpenDeleteDialog(false);
@@ -144,3 +143,40 @@ const handleDeleteConfirm = async () => {
     toast.error(t("Failed to delete user"));
   }
 };
+
+async function deleteCurrentUser() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  // Delete Firestore user document
+  await deleteDoc(doc(DB, "users", user.uid));
+
+  // Delete Auth user
+  await deleteUser(user);
+}
+
+async function deleteUserFromBackend(userId) {
+  try {
+    const response = await fetch('http://localhost:4000/deleteUser', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-secret': 'your_admin_secret', // Must match your backend
+      },
+      body: JSON.stringify({ uid: userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete user from backend');
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      console.log('User deleted successfully from backend');
+    } else {
+      console.error('User deletion failed from backend');
+    }
+  } catch (error) {
+    console.error('Error deleting user from backend:', error);
+  }
+}
