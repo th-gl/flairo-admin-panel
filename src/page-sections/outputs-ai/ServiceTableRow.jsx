@@ -23,8 +23,9 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
-import { TextField as Textarea } from "@mui/material"; 
+import { TextField as Textarea } from "@mui/material";
 import TextareaAutosize from "@mui/material/TextareaAutosize";
+// import Typography from "@mui/material";
 
 import {
   PROMPT_STATUS,
@@ -33,15 +34,10 @@ import {
   PROMPT_COMPLEXITY,
 } from "@/__fakeData__/aiPrompts";
 import { alpha } from "@mui/material/styles";
-import { doc, updateDoc, deleteField,deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteField, deleteDoc } from "firebase/firestore";
 import { DB } from "@/contexts/firebaseContext.jsx";
 import { toast } from "react-toastify";
-import {
-  Grid,
-  IconButton,
-  Tooltip
-} from "@mui/material";
-
+import { Grid, IconButton, Tooltip } from "@mui/material";
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -80,11 +76,17 @@ export default function ServiceTableRow(props) {
   console.log("props", props);
 
   const { t } = useTranslation();
-  const { user, prompt, isSelected, handleSelectRow, handleDeleteService,fetchAIPrompts,handleEdit,
-    setOpenAddDialo
-   } =
-    props;
-  console.log("userrr", user);
+  const {
+    user,
+    prompt,
+    isSelected,
+    handleSelectRow,
+    handleDeleteService,
+    fetchAIPrompts,
+    handleEdit,
+    setOpenAddDialo,
+  } = props;
+  console.log("userrr prompt output data", user);
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -92,11 +94,9 @@ export default function ServiceTableRow(props) {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openTestDialog, setOpenTestDialog] = useState(false);
 
-
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
   };
-
 
   const handleCloseOpenMenu = () => setOpenMenuEl(null);
 
@@ -106,20 +106,20 @@ export default function ServiceTableRow(props) {
     handleCloseOpenMenu();
   };
 
-    const handleDeleteConfirm = async (userId) => {
-      console.log("userId", userId);
-  
-      try {
-        const userRef = doc(DB, "aiPrompts", userId); // 'react' is the collection name
-        await deleteDoc(userRef);
-        toast.success(t("Prompt deleted successfully"));
-       setOpenDialog(false);
-        await fetchAIPrompts();
-      } catch (error) {
-        console.error("Error deleting user: ", error);
-        throw error;
-      }
-    };
+  const handleDeleteConfirm = async (userId) => {
+    console.log("userId", userId);
+
+    try {
+      const userRef = doc(DB, "aiPrompts", userId); // 'react' is the collection name
+      await deleteDoc(userRef);
+      toast.success(t("Prompt deleted successfully"));
+      setOpenDialog(false);
+      await fetchAIPrompts();
+    } catch (error) {
+      console.error("Error deleting user: ", error);
+      throw error;
+    }
+  };
 
   const handleDeleteCancel = () => {
     setOpenDialog(false);
@@ -127,7 +127,7 @@ export default function ServiceTableRow(props) {
 
   // View details
   const handleViewDetails = () => {
-    console.log('AI prompt')
+    console.log("AI prompt");
     fetchAIPrompts();
     setOpenDetailDialog(true);
     handleCloseOpenMenu();
@@ -180,92 +180,33 @@ export default function ServiceTableRow(props) {
 
   return (
     <>
-      <TableRow
-        hover
-        selected={isSelected}
-      
-      >
-        {/* <TableCell padding="checkbox">
-          <Checkbox
-            size="small"
-            color="primary"
-            checked={isSelected}
-            onClick={(event) => handleSelectRow(event, prompt.id)}
-            sx={{
-              "&.Mui-checked": {
-                color: "primary.main",
-              },
-              "&:hover": {
-                backgroundColor: (theme) =>
-                  alpha(theme.palette.primary.main, 0.1),
-              },
-            }}
-          />
-        </TableCell> */}
-
-        {/* Prompt Name */}
+      <TableRow hover selected={isSelected}>
         <TableCell padding="normal">
           <FlexBox alignItems="center" gap={2}>
             <div>
               <Paragraph fontWeight={500} color="text.primary">
-                {user?.name || "-"}
-              </Paragraph>
-            </div>
-          </FlexBox>
-        
-        </TableCell>
-          <TableCell padding="normal">
-    
-            <div>
-              <Paragraph fontWeight={500} color="text.primary">
-               
-                 {user?.key || "-"}
-              </Paragraph>
-            </div>
-        
-        
-        </TableCell>
-            <TableCell padding="normal">
-    
-            <div>
-              <Paragraph fontWeight={500} color="text.primary">
-               
-                 {user?.revenuecat_api_key || "-"}
-              </Paragraph>
-            </div>
-        
-        
-        </TableCell>
-           {/* <TableCell padding="normal">
-    
-            <div>
-              <Paragraph fontWeight={500} color="text.primary">
-                {user?.prompt || "-"}
-              </Paragraph>
-            </div>
-        
-        
-        </TableCell> */}
-        <TableCell padding="normal">
-          <FlexBox alignItems="center" gap={2}>
-            <div>
-              <Paragraph fontWeight={500} color="text.primary">
-                {user?.updatedAt
-                  ? `${user.updatedAt.toLocaleTimeString("en-GB", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}, ${user.updatedAt.toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}`
-                  : "-"}
+                {user?.uid || "-"}
               </Paragraph>
             </div>
           </FlexBox>
         </TableCell>
-
-       
+        <TableCell>
+          <Paragraph>
+            {user?.timestamp
+              ? `${new Date(
+                  user.timestamp.seconds * 1000 +
+                    user.timestamp.nanoseconds / 1e6
+                ).toLocaleTimeString()} - ${
+                  new Date(
+                    user.timestamp.seconds * 1000 +
+                      user.timestamp.nanoseconds / 1e6
+                  )
+                    .toISOString()
+                    .split("T")[0]
+                }`
+              : "-"}
+          </Paragraph>
+        </TableCell>
 
         {/* Actions */}
         <TableCell padding="normal">
@@ -279,12 +220,12 @@ export default function ServiceTableRow(props) {
               title={t("View Details")}
               handleClick={handleViewDetails}
             />
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={Edit}
               title={t("Edit Prompt")}
              handleClick={() => handleEdit(user)} 
-            />
-          
+            /> */}
+
             <TableMoreMenuItem
               Icon={DeleteOutline}
               title={t("Delete")}
@@ -314,7 +255,7 @@ export default function ServiceTableRow(props) {
             {t("Cancel")}
           </Button>
           <Button
-            onClick={()=>handleDeleteConfirm(user.id)}
+            onClick={() => handleDeleteConfirm(user.id)}
             color="error"
             variant="contained"
           >
@@ -329,116 +270,39 @@ export default function ServiceTableRow(props) {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>{t("Prompt Details")}</DialogTitle>
+        <DialogTitle>{t("Output Prompt Details")}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label={t("Prompt Key")}
-                  margin="normal"
-                  value={user?.key || "-"}
-                  InputProps={{
-                    readOnly: true,
-                    endAdornment: (
-                      <Tooltip title={t("Copy to clipboard")}>
-                        <IconButton
-                          onClick={() => copyToClipboard(user?.key)}
-                          edge="end"
-                        >
-                      
-                        </IconButton>
-                      </Tooltip>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label={t("Revenuecat API Key")}
-                  margin="normal"
-                  value={user?.revenuecat_api_key || "-"}
-                  InputProps={{
-                    readOnly: true,
-                    endAdornment: (
-                      <Tooltip title={t("Copy to clipboard")}>
-                        <IconButton
-                    
-                          edge="end"
-                        >
-                       
-                        </IconButton>
-                      </Tooltip>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-            
-            <TextField
-              fullWidth
-              label={t("Prompt Name")}
-              margin="normal"
-              value={user?.name || "-"}
-              InputProps={{
-                readOnly: true,
-                endAdornment: (
-                  <Tooltip title={t("Copy to clipboard")}>
-                    <IconButton
-                      onClick={() => copyToClipboard(user?.name)}
-                      edge="end"
+            <DialogContent>
+              {user.response &&
+                Object.entries(
+                  typeof user.response === "string"
+                    ? JSON.parse(user.response)
+                    : user.response
+                ).map(([key, section]) => (
+                  <Box key={key} mb={3}>
+                    <Paragraph
+                      variant="subtitle2"
+                      sx={{ color: "gray", mb: 1 }}
                     >
-                     
-                    </IconButton>
-                  </Tooltip>
-                ),
-              }}
-            />
-
-            <Textarea
-              fullWidth
-              label={t("Prompt Content")}
-              margin="normal"
-              multiline
-              value={user?.prompt || "-"}
-              InputProps={{
-                readOnly: true,
-                endAdornment: (
-                  <Tooltip title={t("Copy to clipboard")}>
-                    <IconButton
-                      onClick={() => copyToClipboard(user?.prompt)}
-                      edge="end"
+                      {section.title || key}
+                    </Paragraph>
+                    <Box
+                      sx={{
+                        backgroundColor: "#f5f5f5",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                        whiteSpace: "pre-wrap",
+                      }}
                     >
-                   
-                    </IconButton>
-                  </Tooltip>
-                ),
-              }}
-              rows={8}
-              sx={{ fontFamily: "monospace" }}
-            />
-
-            {/* <TextField
-              fullWidth
-              label={t("Created At")}
-              margin="normal"
-              value={formatTimestamp(user?.createdAt)}
-              InputProps={{
-                readOnly: true,
-              }}
-            /> */}
-
-            <TextField
-              fullWidth
-              label={t("Last Updated")}
-              margin="normal"
-              value={formatTimestamp(user?.updatedAt)}
-              InputProps={{
-                readOnly: true,
-              }}
-            />
+                      <Paragraph variant="body2">
+                        {section.text || JSON.stringify(section, null, 2)}
+                      </Paragraph>
+                    </Box>
+                  </Box>
+                ))}
+            </DialogContent>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -447,7 +311,6 @@ export default function ServiceTableRow(props) {
           </Button>
         </DialogActions>
       </Dialog>
-
     </>
   );
 }

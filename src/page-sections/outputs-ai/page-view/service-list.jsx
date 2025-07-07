@@ -18,11 +18,11 @@ import {
 } from "@/__fakeData__/aiPrompts";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import ServiceTableHead from "../../ai-prompts/ServiceTableHead.jsx";
+import ServiceTableHead from "../../outputs-ai/ServiceTableHead.jsx";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import TableSkeleton from "@/components/loader/TableSkeleton.jsx";
-import ServiceTableRow from "../../ai-prompts/ServiceTableRow.jsx";
+import ServiceTableRow from "../../outputs-ai/ServiceTableRow.jsx";
 import {
   deleteService,
   getServices,

@@ -27,11 +27,11 @@ export default function MultiLevelMenu({ sidebarCompact }) {
       icon: duotone.UserList,
       path: "/",
     },
-    {
-      name: t("Recent AI Output"),
-      icon: duotone.PersonCircleCheck,
-      path: "/user-activity-list",
-    },
+    // {
+    //   name: t("Recent AI Output"),
+    //   icon: duotone.PersonCircleCheck,
+    //   path: "/user-activity-list",
+    // },
     {
       name: t("Outputs AI"),
       icon: duotone.PersonCircleCheck,

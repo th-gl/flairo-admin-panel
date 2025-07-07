@@ -121,35 +121,35 @@ export default function ServiceCreate() {
     initialValues,
     validationSchema,
     onSubmit: async (values) => {
-      // console.log({ values });
-      try {
-        const formData = convertToFormData(values);
+      console.log({ values });
+      // try {
+      //   const formData = convertToFormData(values);
 
-        let responseData;
-        if (!isEdit) {
-          responseData = await createServices(formData);
-          // console.log({ responseData });
-        } else {
-          formData.append("_method", "put");
-          responseData = await updateService(id, formData);
-        }
-        // console.log({ responseData });
-        if (responseData.success) {
-          toast.success(
-            isEdit
-              ? `${t("Service updated successfully")}`
-              : `${t("Service created successfully")}`
-          );
-          resetForm();
-          navigate("/services-list");
-        } else {
-          toast.error(t("Service with this name already exists"));
-        }
-      } catch (error) {
-        toast.error(t("Image cannot be empty."));
-        console.error(error);
-        throw error;
-      }
+      //   let responseData;
+      //   if (!isEdit) {
+      //     responseData = await createServices(formData);
+      //     // console.log({ responseData });
+      //   } else {
+      //     formData.append("_method", "put");
+      //     responseData = await updateService(id, formData);
+      //   }
+      //   // console.log({ responseData });
+      //   if (responseData.success) {
+      //     toast.success(
+      //       isEdit
+      //         ? `${t("Service updated successfully")}`
+      //         : `${t("Service created successfully")}`
+      //     );
+      //     resetForm();
+      //     navigate("/services-list");
+      //   } else {
+      //     toast.error(t("Service with this name already exists"));
+      //   }
+      // } catch (error) {
+      //   toast.error(t("Image cannot be empty."));
+      //   console.error(error);
+      //   throw error;
+      // }
     },
   });
 

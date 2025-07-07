@@ -28,20 +28,26 @@ export default function ServiceTableHead(props) {
   const headCells = [
   
     {
-      id: "uid",
+      id: "promptname",
       numeric: false,
       disablePadding: false,
-      label: t("UId"),
+      label: t("Prompt Name"),
       sortable: true,
     },
       {
-      id: "timestamp",
+      id: "apikey",
       numeric: false,
       disablePadding: false,
-      label: t("Time Stamps"),
+      label: t("Api Key"),
       sortable: true,
     },
-    
+      {
+      id: "revenuecat_api_key",
+      numeric: false,
+      disablePadding: false,
+      label: t("Revenuecat Api Key"),
+      sortable: true,
+    },
     // {
     //   id: "status",
     //   numeric: false,
@@ -56,7 +62,13 @@ export default function ServiceTableHead(props) {
     //   label: t("Prompt"),
     //   sortable: true,
     // },
-
+    {
+      id: "updated_at",
+      numeric: false,
+      disablePadding: false,
+      label: t("Last Updated"),
+      sortable: true,
+    },
     {
       id: "actions",
       numeric: false,

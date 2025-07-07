@@ -23,9 +23,8 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
-import { TextField as Textarea } from "@mui/material";
+import { TextField as Textarea } from "@mui/material"; 
 import TextareaAutosize from "@mui/material/TextareaAutosize";
-import { Typography } from "@mui/material";
 
 import {
   PROMPT_STATUS,
@@ -34,10 +33,15 @@ import {
   PROMPT_COMPLEXITY,
 } from "@/__fakeData__/aiPrompts";
 import { alpha } from "@mui/material/styles";
-import { doc, updateDoc, deleteField, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteField,deleteDoc } from "firebase/firestore";
 import { DB } from "@/contexts/firebaseContext.jsx";
 import { toast } from "react-toastify";
-import { Grid, IconButton, Tooltip } from "@mui/material";
+import {
+  Grid,
+  IconButton,
+  Tooltip
+} from "@mui/material";
+
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -72,44 +76,14 @@ const getCategoryColor = (category) => {
   return colors[category] || "#666";
 };
 
-function parseResponse(response) {
-  if (!response) return null;
-  try {
-    return JSON.parse(response);
-  } catch (e) {
-    return { error: "Invalid JSON" };
-  }
-}
-
-function RenderResponse({ response }) {
-  const data = parseResponse(response);
-
-  if (!data) return <Typography>No response data.</Typography>;
-  if (data.error) return <Typography color="error">{data.error}</Typography>;
-
-  return (
-    <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderRadius: 2, mt: 2 }}>
-      <pre style={{ margin: 0, fontFamily: "monospace" }}>
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </Box>
-  );
-}
-
 export default function ServiceTableRow(props) {
   console.log("props", props);
 
   const { t } = useTranslation();
-  const {
-    user,
-    prompt,
-    isSelected,
-    handleSelectRow,
-    handleDeleteService,
-    fetchAIPrompts,
-    handleEdit,
-    setOpenAddDialo,
-  } = props;
+  const { user, prompt, isSelected, handleSelectRow, handleDeleteService,fetchAIPrompts,handleEdit,
+    setOpenAddDialo
+   } =
+    props;
   console.log("userrr", user);
   const navigate = useNavigate();
   const [openMenuEl, setOpenMenuEl] = useState(null);
@@ -118,9 +92,11 @@ export default function ServiceTableRow(props) {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openTestDialog, setOpenTestDialog] = useState(false);
 
+
   const handleOpenMenu = (event) => {
     setOpenMenuEl(event.currentTarget);
   };
+
 
   const handleCloseOpenMenu = () => setOpenMenuEl(null);
 
@@ -130,20 +106,20 @@ export default function ServiceTableRow(props) {
     handleCloseOpenMenu();
   };
 
-  const handleDeleteConfirm = async (userId) => {
-    console.log("userId", userId);
-
-    try {
-      const userRef = doc(DB, "aiPrompts", userId); // 'react' is the collection name
-      await deleteDoc(userRef);
-      toast.success(t("Prompt deleted successfully"));
-      setOpenDialog(false);
-      await fetchAIPrompts();
-    } catch (error) {
-      console.error("Error deleting user: ", error);
-      throw error;
-    }
-  };
+    const handleDeleteConfirm = async (userId) => {
+      console.log("userId", userId);
+  
+      try {
+        const userRef = doc(DB, "aiPrompts", userId); // 'react' is the collection name
+        await deleteDoc(userRef);
+        toast.success(t("Prompt deleted successfully"));
+       setOpenDialog(false);
+        await fetchAIPrompts();
+      } catch (error) {
+        console.error("Error deleting user: ", error);
+        throw error;
+      }
+    };
 
   const handleDeleteCancel = () => {
     setOpenDialog(false);
@@ -151,7 +127,7 @@ export default function ServiceTableRow(props) {
 
   // View details
   const handleViewDetails = () => {
-    console.log("AI prompt");
+    console.log('AI prompt')
     fetchAIPrompts();
     setOpenDetailDialog(true);
     handleCloseOpenMenu();
@@ -201,11 +177,14 @@ export default function ServiceTableRow(props) {
 
   const statusStyle = getStatusColor(prompt?.status);
   const categoryColor = getCategoryColor(prompt?.category);
-  
 
   return (
     <>
-      <TableRow hover selected={isSelected}>
+      <TableRow
+        hover
+        selected={isSelected}
+      
+      >
         {/* <TableCell padding="checkbox">
           <Checkbox
             size="small"
@@ -229,46 +208,35 @@ export default function ServiceTableRow(props) {
           <FlexBox alignItems="center" gap={2}>
             <div>
               <Paragraph fontWeight={500} color="text.primary">
-                {user?.uid || "-"}
+                {user?.name || "-"}
               </Paragraph>
             </div>
           </FlexBox>
+        
         </TableCell>
-        <TableCell padding="normal">
-          <div>
-            <Paragraph fontWeight={500} color="text.primary">
-              <div
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  gap: "10px",
-                  width:"full"
-                }}
-              >
-                <div>
-                  {user?.timestamp
-                    ? new Date(
-                        user.timestamp.seconds * 1000 +
-                          user.timestamp.nanoseconds / 1e6
-                      ).toLocaleTimeString()
-                    : "-"}
-                </div>
-
-                {user?.timestamp
-                  ? new Date(
-                      user.timestamp.seconds * 1000 +
-                        user.timestamp.nanoseconds / 1e6
-                    )
-                      .toISOString()
-                      .split("T")[0]
-                  : "-"}
-              </div>
-            </Paragraph>
-          </div>
-        </TableCell>
+          <TableCell padding="normal">
     
-        {/* <TableCell padding="normal">
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+               
+                 {user?.key || "-"}
+              </Paragraph>
+            </div>
+        
+        
+        </TableCell>
+            <TableCell padding="normal">
+    
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+               
+                 {user?.revenuecat_api_key || "-"}
+              </Paragraph>
+            </div>
+        
+        
+        </TableCell>
+           {/* <TableCell padding="normal">
     
             <div>
               <Paragraph fontWeight={500} color="text.primary">
@@ -277,7 +245,27 @@ export default function ServiceTableRow(props) {
             </div>
         
         
-      
+        </TableCell> */}
+        <TableCell padding="normal">
+          <FlexBox alignItems="center" gap={2}>
+            <div>
+              <Paragraph fontWeight={500} color="text.primary">
+                {user?.updatedAt
+                  ? `${user.updatedAt.toLocaleTimeString("en-GB", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}, ${user.updatedAt.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}`
+                  : "-"}
+              </Paragraph>
+            </div>
+          </FlexBox>
+        </TableCell>
+
+       
 
         {/* Actions */}
         <TableCell padding="normal">
@@ -291,7 +279,17 @@ export default function ServiceTableRow(props) {
               title={t("View Details")}
               handleClick={handleViewDetails}
             />
+            <TableMoreMenuItem
+              Icon={Edit}
+              title={t("Edit Prompt")}
+             handleClick={() => handleEdit(user)} 
+            />
           
+            <TableMoreMenuItem
+              Icon={DeleteOutline}
+              title={t("Delete")}
+              handleClick={handleDeleteConfirmation}
+            />
           </TableMoreMenu>
         </TableCell>
       </TableRow>
@@ -316,7 +314,7 @@ export default function ServiceTableRow(props) {
             {t("Cancel")}
           </Button>
           <Button
-            onClick={() => handleDeleteConfirm(user.id)}
+            onClick={()=>handleDeleteConfirm(user.id)}
             color="error"
             variant="contained"
           >
@@ -334,7 +332,113 @@ export default function ServiceTableRow(props) {
         <DialogTitle>{t("Prompt Details")}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            <RenderResponse response={user?.response} />
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Prompt Key")}
+                  margin="normal"
+                  value={user?.key || "-"}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: (
+                      <Tooltip title={t("Copy to clipboard")}>
+                        <IconButton
+                          onClick={() => copyToClipboard(user?.key)}
+                          edge="end"
+                        >
+                      
+                        </IconButton>
+                      </Tooltip>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t("Revenuecat API Key")}
+                  margin="normal"
+                  value={user?.revenuecat_api_key || "-"}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: (
+                      <Tooltip title={t("Copy to clipboard")}>
+                        <IconButton
+                    
+                          edge="end"
+                        >
+                       
+                        </IconButton>
+                      </Tooltip>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+            
+            <TextField
+              fullWidth
+              label={t("Prompt Name")}
+              margin="normal"
+              value={user?.name || "-"}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <Tooltip title={t("Copy to clipboard")}>
+                    <IconButton
+                      onClick={() => copyToClipboard(user?.name)}
+                      edge="end"
+                    >
+                     
+                    </IconButton>
+                  </Tooltip>
+                ),
+              }}
+            />
+
+            <Textarea
+              fullWidth
+              label={t("Prompt Content")}
+              margin="normal"
+              multiline
+              value={user?.prompt || "-"}
+              InputProps={{
+                readOnly: true,
+                endAdornment: (
+                  <Tooltip title={t("Copy to clipboard")}>
+                    <IconButton
+                      onClick={() => copyToClipboard(user?.prompt)}
+                      edge="end"
+                    >
+                   
+                    </IconButton>
+                  </Tooltip>
+                ),
+              }}
+              rows={8}
+              sx={{ fontFamily: "monospace" }}
+            />
+
+            {/* <TextField
+              fullWidth
+              label={t("Created At")}
+              margin="normal"
+              value={formatTimestamp(user?.createdAt)}
+              InputProps={{
+                readOnly: true,
+              }}
+            /> */}
+
+            <TextField
+              fullWidth
+              label={t("Last Updated")}
+              margin="normal"
+              value={formatTimestamp(user?.updatedAt)}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
@@ -343,6 +447,7 @@ export default function ServiceTableRow(props) {
           </Button>
         </DialogActions>
       </Dialog>
+
     </>
   );
 }
