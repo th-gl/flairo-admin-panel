@@ -53,6 +53,14 @@ export default function RegisterPageView() {
       .required("Email is required"), // password: Yup.string()
     //   .min(6, "Password should be of minimum 6 characters length")
     //   .required("Password is required"),
+
+   password: Yup.string()
+    .required("Password  field is required")
+    .min(8, "Password must be at least 8 characters long")
+    .matches(
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/,
+      "Password must include at least 1 letter, 1 number, and 1 special character"
+    ),
   });
   const { errors, values, touched, handleBlur, handleChange, handleSubmit } =
     useFormik({

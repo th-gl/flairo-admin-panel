@@ -81,26 +81,8 @@ export default function Layout({ children, login }) {
             {login ? (
               <H3 fontWeight={600}> {t("Hi, Welcome Back!")} </H3>
             ) : (
-              <Fragment>
-                {/* <Box
-                  width={80}
-                  alt="essence"
-                  component="img"
-                  src="/static/logo/logo-white-svg.svg"
-                /> */}
-
-                {/* <H3 mt={3} fontWeight={600} maxWidth={450}>
-                  {t("Technology is best when it brings people together.")}
-                </H3> */}
-
-                <Divider
-                  sx={{
-                    borderColor: "primary.400",
-                    borderWidth: 1,
-                    my: 3,
-                  }}
-                />
-              </Fragment>
+                 <H3 fontWeight={600}> {t("Welcome")} </H3>
+          
             )}
           </Box>
         </FlexRowAlign>

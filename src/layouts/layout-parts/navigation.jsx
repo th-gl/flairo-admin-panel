@@ -21,11 +21,11 @@ export const navigations = [
   //   type: "label",
   //   label: "Pages",
   // },
-  // {
-  //   name: "User Profile",
-  //   icon: duotone.UserProfile,
-  //   path: "/dashboard/user-profile",
-  // },
+  {
+    name: "User Profile",
+    icon: duotone.UserProfile,
+    path: "/dashboard/user-profile",
+  },
   {
     name: "Users",
     icon: duotone.UserList,

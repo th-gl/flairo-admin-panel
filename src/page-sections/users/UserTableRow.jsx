@@ -24,7 +24,8 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { ACCESS_LEVELS, PLAN_STATUS } from "@/__fakeData__/users";
 import { toast } from "react-toastify";
-import { DB } from "@/contexts/firebaseContext.jsx";
+import { DB, functions } from "@/contexts/firebaseContext.jsx";
+import { deleteUser } from "firebase/auth";
 import {
   collection,
   addDoc,
@@ -33,6 +34,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const getAccessLevelColor = (level) => {
   // console.log({level});
@@ -131,6 +133,7 @@ export default function UserTableRow(props) {
   const [openMenuEl, setOpenMenuEl] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAccessDialog, setOpenAccessDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state for access level management
   const [formData, setFormData] = useState({
@@ -155,20 +158,30 @@ export default function UserTableRow(props) {
     setOpenDeleteDialog(false);
   };
 
-  const handleDeleteConfirm = async (userId) => {
-    console.log("userId", userId);
+  const functions = getFunctions();
+const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
 
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
     try {
-      const userRef = doc(DB, "users", userId); // 'react' is the collection name
-      await deleteDoc(userRef);
-      toast.success(t("User deleted successfully"));
-      setOpenDeleteDialog(false);
+      // 1️⃣ Delete from Firestore
+      await deleteDoc(doc(DB, "users", user.id));
+
+      // 2️⃣ Call Firebase Function — NO fetch!
+      const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
+      await deleteUserAccount({ uid: user.id });
+
+      toast.success("User deleted from Firestore & Auth ✅");
       await fetchUsers();
     } catch (error) {
-      console.error("Error deleting user: ", error);
-      throw error;
+      console.error(error);
+      toast.error("Error deleting user: " + error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
+
+
 
   // Handle Access Level Management
   const handleAccessLevelManagement = () => {
@@ -253,7 +266,9 @@ export default function UserTableRow(props) {
         <TableCell padding="normal">
           <div>
             <Paragraph fontWeight={500} color="text.primary">
-           {user?.freeAnalysisUsed !== undefined ? Math.abs(user.freeAnalysisUsed) : "-"}
+              {user?.freeAnalysisUsed !== undefined
+                ? Math.abs(user.freeAnalysisUsed)
+                : "-"}
             </Paragraph>
           </div>
         </TableCell>
@@ -363,7 +378,7 @@ export default function UserTableRow(props) {
             {t("Cancel")}
           </Button>
           <Button onClick={() => handleDeleteConfirm(user.id)} color="error">
-            {t("Delete")}
+            {isDeleting ? t("Deleting...") : t("Delete")}
           </Button>
         </DialogActions>
       </Dialog>

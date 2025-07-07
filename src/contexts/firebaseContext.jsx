@@ -2,6 +2,7 @@ import { createContext, useEffect, useReducer, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'; // CUSTOM COMPONENT
 import { getFirestore } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { SplashScreen } from '@/components/splash-screen'; // CONFIGURATION SETTINGS
 
 const firebaseConfig = {
@@ -26,7 +27,8 @@ console.log('firebaseConfig',firebaseConfig)
 // ==============================================================
 const app = initializeApp(firebaseConfig);
 export  const DB = getFirestore(app)
-const auth = getAuth(app);
+export  const auth = getAuth(app);
+export const functions = getFunctions(app);
 const initialAuthState = {
   user: null,
   isInitialized: false,
@@ -118,3 +120,27 @@ export function AuthProvider({
   if (!state.isInitialized) return <SplashScreen />;
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
+
+const handleDeleteConfirm = async () => {
+  if (!selectedUserId) return;
+  try {
+    // 1. Find the user UID (from your rows data)
+    const user = rows.find(r => r.id === selectedUserId);
+    const userUid = user?.uid;
+    // 2. Delete from Firestore
+    await deleteDoc(doc(DB, "ai_outputs", selectedUserId));
+    // 3. Delete from Auth (if UID exists)
+    if (userUid) {
+      const functions = getFunctions();
+      const deleteUserFromAuth = httpsCallable(functions, "deleteUserFromAuth");
+      await deleteUserFromAuth({ uid: userUid });
+    }
+    toast.success(t("User deleted successfully"));
+    setOpenDeleteDialog(false);
+    setSelectedUserId(null);
+    await fetchData();
+  } catch (error) {
+    console.error("Error deleting user: ", error);
+    toast.error(t("Failed to delete user"));
+  }
+};

@@ -71,10 +71,10 @@ export default function UserInfo({ data, fetchData }) {
     }
   };
 
-  const imagePreview = values.avatar
-    ? URL.createObjectURL(values.avatar)
-    : data.avatar
-      ? data.avatar
+  const imagePreview = values?.avatar
+    ? URL.createObjectURL(values?.avatar)
+    : data?.avatar
+      ? data?.avatar
       : "/static/user/user-11.png";
 
   // const fetchData = async () => {

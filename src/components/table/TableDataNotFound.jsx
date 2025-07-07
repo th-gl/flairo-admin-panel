@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import React from "react";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
-import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -18,17 +17,19 @@ import { toast } from "react-toastify";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextField from "@mui/material/TextField";
 import TablePagination from "@mui/material/TablePagination";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 export default function AiOutputSimpleRows() {
   const { t } = useTranslation();
   const [rows, setRows] = useState([]);
   const [openMenuEl, setOpenMenuEl] = useState(null);
+  const [activeItem, setActiveItem] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [viewData, setViewData] = useState(null);
   const [page, setPage] = useState(0);
-const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleViewDetails = (item) => {
     setViewData(item);
@@ -68,7 +69,6 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
       });
 
       setRows(data);
-      console.log("setRows", data);
     } catch (err) {
       console.error("Failed to fetch data:", err);
     }
@@ -78,11 +78,15 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
     fetchData();
   }, []);
 
-  const handleOpenMenu = (event) => {
+  const handleOpenMenu = (event, item) => {
     setOpenMenuEl(event.currentTarget);
+    setActiveItem(item);
   };
 
-  const handleCloseOpenMenu = () => setOpenMenuEl(null);
+  const handleCloseOpenMenu = () => {
+    setOpenMenuEl(null);
+    setActiveItem(null);
+  };
 
   const openDeleteConfirmDialog = (id) => {
     setSelectedUserId(id);
@@ -97,10 +101,15 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleDeleteConfirm = async () => {
     if (!selectedUserId) return;
-    console.log("selectedUserId", selectedUserId);
-
     try {
+      const user = rows.find(r => r.id === selectedUserId);
+      const userUid = user?.uid;
       await deleteDoc(doc(DB, "ai_outputs", selectedUserId));
+      if (userUid) {
+        const functions = getFunctions();
+        const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
+        await deleteUserAccount({ uid: userUid });
+      }
       toast.success(t("User deleted successfully"));
       setOpenDeleteDialog(false);
       setSelectedUserId(null);
@@ -121,17 +130,16 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
     );
   }
   const paginatedRows = rows.slice(
-  page * rowsPerPage,
-  page * rowsPerPage + rowsPerPage
-);
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
-  console.log("viewData" + viewData?.parsedResponse);
   return (
     <>
       {paginatedRows.map((item) => (
         <TableRow key={item.id}>
           <TableCell>
-            <Paragraph sx={{padding:"10px"}}>{item.uid}</Paragraph>
+            <Paragraph sx={{ padding: "10px" }}>{item.uid}</Paragraph>
           </TableCell>
           <TableCell>
             <Paragraph>
@@ -142,8 +150,9 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
           </TableCell>
           <TableCell padding="normal">
             <TableMoreMenu
-              open={openMenuEl}
-              handleOpen={handleOpenMenu}
+              open={Boolean(openMenuEl) && activeItem?.id === item.id}
+              anchorEl={openMenuEl}
+              handleOpen={(e) => handleOpenMenu(e, item)}
               handleClose={handleCloseOpenMenu}
             >
               <TableMoreMenuItem
@@ -160,6 +169,7 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
           </TableCell>
         </TableRow>
       ))}
+      {/* AI Output Delete Confirmation */}
 
       <Dialog open={openDeleteDialog} onClose={handleDeleteCancel}>
         <DialogTitle>
@@ -177,45 +187,48 @@ const [rowsPerPage, setRowsPerPage] = useState(5);
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI Output view Details */}
       <Dialog open={openViewDialog} onClose={handleCloseViewDialog}>
         <DialogTitle>{t("View AI Output Details")}</DialogTitle>
-      <DialogContent>
-  {viewData?.parsedResponse &&
-    Object.entries(viewData.parsedResponse).map(([key, section]) => (
-      <Paragraph key={key} mb={3}>
-        <Paragraph sx={{ color: "gray" ,margin:"7px"}}>
-          {section.title || ""}
-        </Paragraph>
-        <Paragraph
-          sx={{
-            backgroundColor: "#f5f5f5",
-            padding: "10px",
-            borderRadius: "4px",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {section.text || ""}
-        </Paragraph>
-      </Paragraph>
-    ))}
-</DialogContent>
+        <DialogContent>
+          {viewData?.parsedResponse &&
+            Object.entries(viewData.parsedResponse).map(([key, section]) => (
+              <Paragraph key={key} mb={3}>
+                <Paragraph sx={{ color: "gray", margin: "7px" }}>
+                  {section.title || key}
+                </Paragraph>
+                <Paragraph
+                  sx={{
+                    backgroundColor: "#f5f5f5",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {section.text || JSON.stringify(section, null, 2)}
+                </Paragraph>
+              </Paragraph>
+            ))}
+        </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseViewDialog}>{t("Close")}</Button>
         </DialogActions>
       </Dialog>
       <TablePagination
-  component="div"
-  count={rows.length}
-  page={page}
-  onPageChange={(event, newPage) => setPage(newPage)}
-  rowsPerPage={rowsPerPage}
-  onRowsPerPageChange={(event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); // reset to first page on page size change
-  }}
-  rowsPerPageOptions={[5, 10, 25, 50]}
-/>
+        component="div"
+        count={rows.length}
+        page={page}
+        onPageChange={(event, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(event) => {
+          setRowsPerPage(parseInt(event.target.value, 10));
+          setPage(0); // reset to first page on page size change
+        }}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+      />
     </>
   );
 }
+
