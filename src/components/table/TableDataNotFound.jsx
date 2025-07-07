@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import TextField from "@mui/material/TextField";
 import TablePagination from "@mui/material/TablePagination";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 export default function AiOutputSimpleRows() {
   const { t } = useTranslation();
@@ -101,7 +102,14 @@ export default function AiOutputSimpleRows() {
   const handleDeleteConfirm = async () => {
     if (!selectedUserId) return;
     try {
+      const user = rows.find(r => r.id === selectedUserId);
+      const userUid = user?.uid;
       await deleteDoc(doc(DB, "ai_outputs", selectedUserId));
+      if (userUid) {
+        const functions = getFunctions();
+        const deleteUserAccount = httpsCallable(functions, "deleteUserAccount");
+        await deleteUserAccount({ uid: userUid });
+      }
       toast.success(t("User deleted successfully"));
       setOpenDeleteDialog(false);
       setSelectedUserId(null);
