@@ -100,7 +100,7 @@ export default function LoginPageView() {
       try {
         await loginWithEmailPassword(values.email, values.password);
         // await login(values.phone_number, values.password);
-        navigate("/");
+        // navigate("/");
       } catch (error) {
         // console.log(error);
         toast.error(t("Incorrect password or email."));

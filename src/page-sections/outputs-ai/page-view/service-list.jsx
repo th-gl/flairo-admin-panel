@@ -109,7 +109,7 @@ export default function ServiceList() {
         updatedAt: data.updatedAt?.toDate(),
       };
     });
-    console.log('dataprompt',dataprompt)
+    console.log("dataprompt", dataprompt);
     setUsers(dataprompt);
     setTotalRecords(dataprompt.length);
   };
@@ -182,109 +182,109 @@ export default function ServiceList() {
     return matches;
   });
 
-  const handleDeleteUser = (id) => {
-    if (showMockData) {
-      setAiPromptData((state) => state.filter((item) => item.id !== id));
-    } else {
-      setUsers((state) => state.filter((item) => item.id !== id));
-    }
-  };
+  // const handleDeleteUser = (id) => {
+  //   if (showMockData) {
+  //     setAiPromptData((state) => state.filter((item) => item.id !== id));
+  //   } else {
+  //     setUsers((state) => state.filter((item) => item.id !== id));
+  //   }
+  // };
 
-  const handleAllUserDelete = () => {
-    if (showMockData) {
-      setAiPromptData((state) =>
-        state.filter((item) => !selected.includes(item.id))
-      );
-    } else {
-      setUsers((state) => state.filter((item) => !selected.includes(item.id)));
-    }
-    handleSelectAllRows([])();
-  };
+  // const handleAllUserDelete = () => {
+  //   if (showMockData) {
+  //     setAiPromptData((state) =>
+  //       state.filter((item) => !selected.includes(item.id))
+  //     );
+  //   } else {
+  //     setUsers((state) => state.filter((item) => !selected.includes(item.id)));
+  //   }
+  //   handleSelectAllRows([])();
+  // };
 
-  const fetchList = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getServices(
-        "",
-        rowsPerPage,
-        page,
-        sortData.order,
-        sortData.name
-      );
-      // console.log(response);
-      if (response.success) {
-        setUsers(response.data);
-        // console.log(response.data, "response.data prompts");
-        setTotalRecords(response.totalRecords);
-      }
-    } catch (error) {
-      console.error(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [rowsPerPage, page, sortData.order, sortData.name]);
+  // const fetchList = useCallback(async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await getServices(
+  //       "",
+  //       rowsPerPage,
+  //       page,
+  //       sortData.order,
+  //       sortData.name
+  //     );
+  //     // console.log(response);
+  //     if (response.success) {
+  //       setUsers(response.data);
+  //       // console.log(response.data, "response.data prompts");
+  //       setTotalRecords(response.totalRecords);
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw error;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [rowsPerPage, page, sortData.order, sortData.name]);
 
-  const handleDeleteService = async (id) => {
-    try {
-      const response = await deleteService(id);
-      // console.log({ response }, "delete Service");
-      if (response.success) {
-        toast.success(t("AI prompt deleted successfully"));
-        if (!showMockData) {
-          await fetchList();
-        } else {
-          handleDeleteUser(id);
-        }
-      } else {
-        toast.error(
-          t(
-            "This prompt cannot be deleted as it may be referenced by other data."
-          )
-        );
-      }
-    } catch (error) {
-      console.error(error);
-      if (showMockData) {
-        handleDeleteUser(id);
-        toast.success(t("AI prompt deleted successfully"));
-      } else {
-        throw error;
-      }
-    }
-  };
+  // const handleDeleteService = async (id) => {
+  //   try {
+  //     const response = await deleteService(id);
+  //     // console.log({ response }, "delete Service");
+  //     if (response.success) {
+  //       toast.success(t("AI prompt deleted successfully"));
+  //       if (!showMockData) {
+  //         await fetchList();
+  //       } else {
+  //         handleDeleteUser(id);
+  //       }
+  //     } else {
+  //       toast.error(
+  //         t(
+  //           "This prompt cannot be deleted as it may be referenced by other data."
+  //         )
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     if (showMockData) {
+  //       handleDeleteUser(id);
+  //       toast.success(t("AI prompt deleted successfully"));
+  //     } else {
+  //       throw error;
+  //     }
+  //   }
+  // };
 
-  const handleMultipleDeleteService = async () => {
-    try {
-      const response = await deleteMultipleService(selected);
-      // console.log({ response }, "delete Service");
-      if (response.success) {
-        // console.log({ response }, "inner delete Service");
+  // const handleMultipleDeleteService = async () => {
+  //   try {
+  //     const response = await deleteMultipleService(selected);
+  //     // console.log({ response }, "delete Service");
+  //     if (response.success) {
+  //       // console.log({ response }, "inner delete Service");
 
-        toast.success(t("AI prompts deleted successfully"));
-        if (!showMockData) {
-          fetchList();
-        } else {
-          handleAllUserDelete();
-        }
-        // console.log({ response }, "inner second delete Service");
-      }
-    } catch (error) {
-      console.error(error);
-      if (showMockData) {
-        handleAllUserDelete();
-        toast.success(t("AI prompts deleted successfully"));
-      } else {
-        throw error;
-      }
-    }
-  };
+  //       toast.success(t("AI prompts deleted successfully"));
+  //       if (!showMockData) {
+  //         fetchList();
+  //       } else {
+  //         handleAllUserDelete();
+  //       }
+  //       // console.log({ response }, "inner second delete Service");
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     if (showMockData) {
+  //       handleAllUserDelete();
+  //       toast.success(t("AI prompts deleted successfully"));
+  //     } else {
+  //       throw error;
+  //     }
+  //   }
+  // };
 
-  useEffect(() => {
-    if (!showMockData) {
-      fetchList();
-    }
-  }, [fetchList, showMockData]);
+  // useEffect(() => {
+  //   if (!showMockData) {
+  //     fetchList();
+  //   }
+  // }, [fetchList, showMockData]);
 
   const handleSort = (sortOrder, sortField) => {
     setSortData({ order: sortOrder, name: sortField });
@@ -388,27 +388,27 @@ export default function ServiceList() {
 
   const handleAddNewPrompt = async () => {
     try {
-    const { name, key, prompt, revenuecat_api_key } = newPrompt;
+      const { name, key, prompt, revenuecat_api_key } = newPrompt;
 
-  if (!name.trim()) {
-    toast.error(t("Prompt name is required"));
-    return;
-  }
+      if (!name.trim()) {
+        toast.error(t("Prompt name is required"));
+        return;
+      }
 
-  if (!key.trim()) {
-    toast.error(t("API key is required"));
-    return;
-  }
+      if (!key.trim()) {
+        toast.error(t("API key is required"));
+        return;
+      }
 
-  if (!revenuecat_api_key.trim()) {
-    toast.error(t("RevenueCat API key is required"));
-    return;
-  }
+      if (!revenuecat_api_key.trim()) {
+        toast.error(t("RevenueCat API key is required"));
+        return;
+      }
 
-  if (!prompt.trim()) {
-    toast.error(t("Prompt text is required"));
-    return;
-  }
+      if (!prompt.trim()) {
+        toast.error(t("Prompt text is required"));
+        return;
+      }
       const currentTime = new Date();
       const promptData = {
         name: newPrompt.name,
@@ -449,6 +449,7 @@ export default function ServiceList() {
       toast.error(t("Failed to save prompt"));
     }
   };
+  users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <>
@@ -458,7 +459,6 @@ export default function ServiceList() {
           subtitle={t("View your Outputs AI")}
         />
 
-     
         <SearchArea
           handleChangeFilter={handleChangeFilter}
           userFilter={userFilter}
@@ -504,7 +504,7 @@ export default function ServiceList() {
 
         <TablePagination
           page={page}
-          count={showMockData ? filteredUsers.length : totalRecords}
+          count={ totalRecords}
           rowsPerPage={rowsPerPage}
           component="div"
           onPageChange={handleChangePage}

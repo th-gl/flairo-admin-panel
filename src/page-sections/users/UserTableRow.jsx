@@ -165,7 +165,7 @@ const handleDeleteConfirm = async () => {
   setIsDeleting(true);
   try {
     // 1. Delete from Firebase Auth via custom backend
-    const response = await fetch("http://localhost:5000/delete-user", {
+    const response = await fetch(`${import.meta.env.VITE_Base_URL}/delete-user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -226,11 +226,11 @@ export default function ServiceTableRow(props) {
              handleClick={() => handleEdit(user)} 
             /> */}
 
-            <TableMoreMenuItem
+            {/* <TableMoreMenuItem
               Icon={DeleteOutline}
               title={t("Delete")}
               handleClick={handleDeleteConfirmation}
-            />
+            /> */}
           </TableMoreMenu>
         </TableCell>
       </TableRow>

@@ -1,0 +1,11 @@
+{
+    "type": "process.env.project_type",
+    "project_id": "flairo-app",
+    "private_key_id": "your-private-key-id",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEv... \n-----END PRIVATE KEY-----\n",
+    "client_email": "firebase-adminsdk-xxxx@flairo-app.iam.gserviceaccount.com",
+    "client_id": "1234567890",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token"
+  }
+  
